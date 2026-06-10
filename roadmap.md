@@ -35,6 +35,6 @@ This document outlines the current gaps, planned updates, and future improvement
 ### Phase 3: Dashboard & API Polish
 *   **Goal:** Enhance usability and provide real-time metrics.
 *   **Tasks:**
-    *   [ ] **Stream Key Regeneration:** Implement the `/api/stream-keys/:id/regenerate` endpoint on the backend to match the frontend call in [lib/api.ts](file:///Users/eldyreynanda/Developer/Antigravity/iris-project-gemini/lib/api.ts).
-    *   [ ] **Live Telemetry & Viewers:** Parse the MediaMTX paths API `/v3/paths/list` and retrieve real-time readers count to display active viewer stats in the Next.js UI instead of returning `0`.
-    *   [ ] **Environment Configurations:** Externalize `NEXT_PUBLIC_API_URL` to support dynamic domain names or localhost forwarding in Docker environment configurations.
+    *   [x] **Stream Key Regeneration:** Implement the `/api/stream-keys/:id/regenerate` endpoint on the backend to match the frontend call in [lib/api.ts](file:///Users/eldyreynanda/Developer/Antigravity/iris-project-gemini/lib/api.ts).
+    *   [x] **Live Telemetry & Viewers:** Parse the MediaMTX paths API `/v3/paths/list` and retrieve real-time readers count to display active viewer stats in the Next.js UI instead of returning `0`.
+    *   [x] **Environment Configurations:** Externalize `NEXT_PUBLIC_API_URL` to support dynamic domain names or localhost forwarding in Docker environment configurations.
