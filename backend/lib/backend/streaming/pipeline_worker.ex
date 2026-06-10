@@ -45,6 +45,7 @@ defmodule Backend.Streaming.PipelineWorker do
             "!",
             "flvdemux",
             "name=d",
+            "d.video",
             "!",
             "h264parse",
             "!",
@@ -103,7 +104,7 @@ defmodule Backend.Streaming.PipelineWorker do
 
   @impl true
   def handle_info({port, {:data, msg}}, %{port: port} = state) do
-    Logger.debug("GStreamer output: #{String.trim(msg)}")
+    Logger.warning("GStreamer output: #{String.trim(msg)}")
     {:noreply, state}
   end
 
