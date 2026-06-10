@@ -163,6 +163,47 @@ export async function deleteDestination(id: string | number) {
   return true;
 }
 
+export async function createDestination(name: string, platform: string, url: string, streamKeyId: string | number) {
+  const res = await fetch(`${getApiUrl()}/destinations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: name,
+      platform: platform,
+      target_rtmp_url: url,
+      status: 'stopped',
+      stream_key_id: typeof streamKeyId === 'string' ? parseInt(streamKeyId, 10) : streamKeyId
+    })
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to create destination");
+  }
+  return await res.json();
+}
+
+export async function startDestination(id: string | number) {
+  const res = await fetch(`${getApiUrl()}/destinations/${id}/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  if (!res.ok) {
+    throw new Error("Failed to start destination");
+  }
+  return await res.json();
+}
+
+export async function stopDestination(id: string | number) {
+  const res = await fetch(`${getApiUrl()}/destinations/${id}/stop`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  if (!res.ok) {
+    throw new Error("Failed to stop destination");
+  }
+  return await res.json();
+}
+
 export async function getDestinations() {
   try {
     const res = await fetch(`${getApiUrl()}/destinations`, { cache: 'no-store' });

@@ -57,7 +57,13 @@ interface Destination {
   errorMessage?: string
 }
 
-import { getDestinations } from "@/lib/api"
+import {
+  getDestinations,
+  getStreamKeys,
+  createDestination,
+  startDestination,
+  stopDestination,
+} from "@/lib/api"
 
 const platformConfig: Record<
   string,
@@ -68,6 +74,7 @@ const platformConfig: Record<
   Facebook: { color: "bg-[#1877F2]", icon: "FB" },
   "Twitter/X": { color: "bg-foreground", icon: "X" },
   "Custom RTMP": { color: "bg-primary", icon: "RT" },
+  "Custom SRT": { color: "bg-amber-600", icon: "SRT" },
 }
 
 const statusConfig = {
@@ -93,37 +100,67 @@ const statusConfig = {
   },
 }
 
+const getPlatformDisplayName = (plat: string) => {
+  const p = plat?.toLowerCase() || '';
+  if (p === 'youtube') return 'YouTube';
+  if (p === 'twitch') return 'Twitch';
+  if (p === 'facebook') return 'Facebook';
+  if (p === 'twitter') return 'Twitter/X';
+  if (p === 'srt') return 'Custom SRT';
+  return 'Custom RTMP';
+}
+
 import { ProtectedRoute } from "@/components/auth/protected-route"
 
 export default function DestinationsPage() {
   const [destinations, setDestinations] = useState<Destination[]>([])
+  const [streamKeys, setStreamKeys] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   const [searchQuery, setSearchQuery] = useState("")
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [filterStatus, setFilterStatus] = useState<string>("all")
 
-  useEffect(() => {
-    let mounted = true
-    getDestinations().then((data) => {
-      if (mounted) {
-        // Map API data structure to component's expected structure
-        const mappedDestinations: Destination[] = data.map(dest => ({
-          id: dest.id,
+  // Form states
+  const [formName, setFormName] = useState("")
+  const [formPlatform, setFormPlatform] = useState("youtube")
+  const [formUrl, setFormUrl] = useState("")
+  const [formStreamKeyId, setFormStreamKeyId] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const fetchData = async () => {
+    try {
+      const [destData, keyData] = await Promise.all([
+        getDestinations(),
+        getStreamKeys()
+      ])
+
+      setStreamKeys(keyData)
+
+      const mappedDestinations: Destination[] = destData.map((dest: any) => {
+        const matchKey = keyData.find((k: any) => k.id.toString() === dest.stream_key_id?.toString())
+        const keyName = matchKey ? matchKey.name : `Stream Key #${dest.stream_key_id}`
+
+        return {
+          id: dest.id.toString(),
           name: dest.name,
-          platform: dest.name.includes("YouTube") ? "YouTube" :
-            dest.name.includes("Twitch") ? "Twitch" :
-              dest.name.includes("Facebook") ? "Facebook" :
-                dest.name.includes("Twitter") ? "Twitter/X" : "Custom RTMP",
+          platform: getPlatformDisplayName(dest.platform),
           rtmpUrl: dest.url,
-          streamKeyRef: "Main Broadcast", // Defaulting for mock
+          streamKeyRef: keyName,
           status: dest.status as "streaming" | "ready" | "error" | "stopped",
-        }))
-        setDestinations(mappedDestinations)
-        setIsLoading(false)
-      }
-    })
-    return () => { mounted = false }
+        }
+      })
+
+      setDestinations(mappedDestinations)
+    } catch (err) {
+      console.error("Failed to fetch destinations or stream keys:", err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
   }, [])
 
   const handleDeleteDestination = async (id: string) => {
@@ -135,6 +172,51 @@ export default function DestinationsPage() {
     } catch (err) {
       alert("Failed to delete destination");
       console.error(err);
+    }
+  }
+
+  const handleCreateDestination = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!formName.trim() || !formUrl.trim() || !formStreamKeyId) {
+      alert("Please fill in all fields and select a source stream key.")
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      await createDestination(formName, formPlatform, formUrl, formStreamKeyId)
+      setCreateDialogOpen(false)
+      // Reset form
+      setFormName("")
+      setFormPlatform("youtube")
+      setFormUrl("")
+      setFormStreamKeyId("")
+      await fetchData()
+    } catch (err) {
+      alert("Failed to create destination")
+      console.error(err)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleStartDestination = async (id: string) => {
+    try {
+      await startDestination(id)
+      await fetchData()
+    } catch (err) {
+      alert("Failed to start streaming to destination")
+      console.error(err)
+    }
+  }
+
+  const handleStopDestination = async (id: string) => {
+    try {
+      await stopDestination(id)
+      await fetchData()
+    } catch (err) {
+      alert("Failed to stop streaming to destination")
+      console.error(err)
     }
   }
 
@@ -249,70 +331,97 @@ export default function DestinationsPage() {
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
-              <DialogHeader>
-                <DialogTitle>Add Stream Destination</DialogTitle>
-                <DialogDescription>
-                  Configure a new RTMP destination to restream your content.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="dest-name">Destination Name</Label>
-                  <Input id="dest-name" placeholder="e.g., YouTube Main" />
+              <form onSubmit={handleCreateDestination}>
+                <DialogHeader>
+                  <DialogTitle>Add Stream Destination</DialogTitle>
+                  <DialogDescription>
+                    Configure a new RTMP or SRT destination to restream your content.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dest-name">Destination Name</Label>
+                    <Input
+                      id="dest-name"
+                      placeholder="e.g., YouTube Main"
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="platform">Platform</Label>
+                    <Select value={formPlatform} onValueChange={setFormPlatform}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select platform" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="youtube">YouTube</SelectItem>
+                        <SelectItem value="twitch">Twitch</SelectItem>
+                        <SelectItem value="facebook">Facebook</SelectItem>
+                        <SelectItem value="twitter">Twitter/X</SelectItem>
+                        <SelectItem value="custom">Custom RTMP</SelectItem>
+                        <SelectItem value="srt">Custom SRT</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="rtmp-url">{formPlatform === "srt" ? "SRT URI" : "RTMP URL"}</Label>
+                    <Input
+                      id="rtmp-url"
+                      placeholder={formPlatform === "srt" ? "srt://ip:port or srt://ip:port?streamid=xxx" : "rtmp://a.rtmp.youtube.com/live2/xxxx"}
+                      value={formUrl}
+                      onChange={(e) => setFormUrl(e.target.value)}
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {formPlatform === "srt"
+                        ? "Full SRT URI (e.g., srt://ip:port or srt://ip:port?streamid=xxx)"
+                        : "Full RTMP URL including stream key from your platform"}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="source-key">Source Stream Key</Label>
+                    <Select value={formStreamKeyId} onValueChange={setFormStreamKeyId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select source key" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {streamKeys.length === 0 ? (
+                          <SelectItem value="none" disabled>No active stream keys</SelectItem>
+                        ) : (
+                          streamKeys.map((sk) => (
+                            <SelectItem key={sk.id} value={sk.id}>
+                              {sk.name} ({sk.keyString})
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Which ingest stream to forward to this destination
+                    </p>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="platform">Platform</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select platform" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="youtube">YouTube</SelectItem>
-                      <SelectItem value="twitch">Twitch</SelectItem>
-                      <SelectItem value="facebook">Facebook</SelectItem>
-                      <SelectItem value="twitter">Twitter/X</SelectItem>
-                      <SelectItem value="custom">Custom RTMP</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rtmp-url">RTMP URL</Label>
-                  <Input
-                    id="rtmp-url"
-                    placeholder="rtmp://a.rtmp.youtube.com/live2/xxxx"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Full RTMP URL including stream key from your platform
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="source-key">Source Stream Key</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select source" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="main">Main Broadcast</SelectItem>
-                      <SelectItem value="secondary">Secondary Feed</SelectItem>
-                      <SelectItem value="backup">Backup Stream</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Which ingest stream to forward to this destination
-                  </p>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setCreateDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={() => setCreateDialogOpen(false)}>
-                  Add Destination
-                </Button>
-              </DialogFooter>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setCreateDialogOpen(false)
+                      setFormName("")
+                      setFormPlatform("youtube")
+                      setFormUrl("")
+                      setFormStreamKeyId("")
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Adding..." : "Add Destination"}
+                  </Button>
+                </DialogFooter>
+              </form>
             </DialogContent>
           </Dialog>
         </div>
@@ -404,17 +513,28 @@ export default function DestinationsPage() {
                   <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
                     <div className="flex items-center gap-2">
                       {destination.status === "streaming" ? (
-                        <Button size="sm" variant="destructive">
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleStopDestination(destination.id)}
+                        >
                           <Square className="mr-1.5 h-3.5 w-3.5" />
                           Stop
                         </Button>
                       ) : destination.status === "error" ? (
-                        <Button size="sm" variant="outline">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleStartDestination(destination.id)}
+                        >
                           <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                           Retry
                         </Button>
                       ) : (
-                        <Button size="sm">
+                        <Button
+                          size="sm"
+                          onClick={() => handleStartDestination(destination.id)}
+                        >
                           <Play className="mr-1.5 h-3.5 w-3.5" />
                           Start
                         </Button>

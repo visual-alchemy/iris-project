@@ -26,7 +26,13 @@ RUN mix do compile, release
 
 # prepare release image
 FROM alpine:3.18.4 AS app
-RUN apk add --no-cache libstdc++ ncurses-libs bash openssl
+RUN apk add --no-cache libstdc++ ncurses-libs bash openssl \
+    gstreamer \
+    gst-plugins-base \
+    gst-plugins-good \
+    gst-plugins-bad \
+    gst-plugins-ugly \
+    gst-libav
 
 WORKDIR /app
 

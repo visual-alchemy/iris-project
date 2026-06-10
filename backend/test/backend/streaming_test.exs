@@ -35,9 +35,16 @@ defmodule Backend.StreamingTest do
 
     test "update_stream_key/2 with valid data updates the stream_key" do
       stream_key = stream_key_fixture()
-      update_attrs = %{name: "some updated name", status: "some updated status", key_string: "some updated key_string"}
 
-      assert {:ok, %StreamKey{} = stream_key} = Streaming.update_stream_key(stream_key, update_attrs)
+      update_attrs = %{
+        name: "some updated name",
+        status: "some updated status",
+        key_string: "some updated key_string"
+      }
+
+      assert {:ok, %StreamKey{} = stream_key} =
+               Streaming.update_stream_key(stream_key, update_attrs)
+
       assert stream_key.name == "some updated name"
       assert stream_key.status == "some updated status"
       assert stream_key.key_string == "some updated key_string"
@@ -133,7 +140,12 @@ defmodule Backend.StreamingTest do
     end
 
     test "create_destination/1 with valid data creates a destination" do
-      valid_attrs = %{name: "some name", status: "some status", platform: "some platform", target_rtmp_url: "some target_rtmp_url"}
+      valid_attrs = %{
+        name: "some name",
+        status: "some status",
+        platform: "some platform",
+        target_rtmp_url: "some target_rtmp_url"
+      }
 
       assert {:ok, %Destination{} = destination} = Streaming.create_destination(valid_attrs)
       assert destination.name == "some name"
@@ -148,9 +160,17 @@ defmodule Backend.StreamingTest do
 
     test "update_destination/2 with valid data updates the destination" do
       destination = destination_fixture()
-      update_attrs = %{name: "some updated name", status: "some updated status", platform: "some updated platform", target_rtmp_url: "some updated target_rtmp_url"}
 
-      assert {:ok, %Destination{} = destination} = Streaming.update_destination(destination, update_attrs)
+      update_attrs = %{
+        name: "some updated name",
+        status: "some updated status",
+        platform: "some updated platform",
+        target_rtmp_url: "some updated target_rtmp_url"
+      }
+
+      assert {:ok, %Destination{} = destination} =
+               Streaming.update_destination(destination, update_attrs)
+
       assert destination.name == "some updated name"
       assert destination.status == "some updated status"
       assert destination.platform == "some updated platform"
@@ -159,7 +179,10 @@ defmodule Backend.StreamingTest do
 
     test "update_destination/2 with invalid data returns error changeset" do
       destination = destination_fixture()
-      assert {:error, %Ecto.Changeset{}} = Streaming.update_destination(destination, @invalid_attrs)
+
+      assert {:error, %Ecto.Changeset{}} =
+               Streaming.update_destination(destination, @invalid_attrs)
+
       assert destination == Streaming.get_destination!(destination.id)
     end
 

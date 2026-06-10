@@ -13,7 +13,7 @@ defmodule BackendWeb.UserController do
 
   def create(conn, params) do
     user_params = Map.get(params, "user", params)
-    
+
     with {:ok, %User{} = user} <- Accounts.create_user(user_params) do
       conn
       |> put_status(:created)

@@ -10,14 +10,16 @@ defmodule BackendWeb.Router do
 
     post "/login", AuthController, :login
     post "/auth/mediamtx", WebhookController, :handle_event
-    
+
     get "/streams", StreamController, :index
     get "/server-stats", StreamController, :server_stats
     get "/database-stats", StreamController, :database_stats
-    
+
     resources "/stream-keys", StreamKeyController, except: [:new, :edit, :show, :update]
     post "/stream-keys/:id/regenerate", StreamKeyController, :regenerate
     resources "/destinations", DestinationController, except: [:new, :edit, :show, :update]
+    post "/destinations/:id/start", DestinationController, :start
+    post "/destinations/:id/stop", DestinationController, :stop
     resources "/users", UserController, except: [:new, :edit]
   end
 

@@ -9,8 +9,8 @@ This document outlines the current gaps, planned updates, and future improvement
 ### Phase 1: Core Streaming redistribution Engine (Critical)
 *   **Goal:** Enable real-time restreaming to destinations using GStreamer (RTMP & SRT).
 *   **Tasks:**
-    *   [ ] **GStreamer Dependency:** Update the production release stage of [backend/Dockerfile](file:///Users/eldyreynanda/Developer/Antigravity/iris-project-gemini/backend/Dockerfile) to install GStreamer (`gstreamer`, `gst-plugins-base`, `gst-plugins-good`, `gst-plugins-bad`, `gst-plugins-ugly`, `gst-libav`, `srt` / `libgstreamer-plugins-bad1.0-dev`).
-    *   [ ] **Orchestration GenServer:** Implement a backend GenServer/DynamicSupervisor (e.g., `Backend.Streaming.PipelineSupervisor`) to start, monitor, and stop GStreamer processes for active destinations:
+    *   [x] **GStreamer Dependency:** Update the production release stage of [backend/Dockerfile](file:///Users/eldyreynanda/Developer/Antigravity/iris-project-gemini/backend/Dockerfile) to install GStreamer (`gstreamer`, `gst-plugins-base`, `gst-plugins-good`, `gst-plugins-bad`, `gst-plugins-ugly`, `gst-libav`, `srt` / `libgstreamer-plugins-bad1.0-dev`).
+    *   [x] **Orchestration GenServer:** Implement a backend GenServer/DynamicSupervisor (e.g., `Backend.Streaming.PipelineSupervisor`) to start, monitor, and stop GStreamer processes for active destinations:
         *   **For RTMP Targets:**
             ```bash
             gst-launch-1.0 rtmpsrc location=rtmp://iris_mediamtx:1935/live/<stream_key> \
@@ -22,8 +22,8 @@ This document outlines the current gaps, planned updates, and future improvement
             gst-launch-1.0 rtmpsrc location=rtmp://iris_mediamtx:1935/live/<stream_key> \
               ! flvdemux name=d ! h264parse ! mpegtsmux name=m ! srtsink uri="srt://<host>:<port>?mode=caller" d.audio ! aacparse ! m.
             ```
-    *   [ ] **Start/Stop Endpoints:** Add POST `/api/destinations/:id/start` and POST `/api/destinations/:id/stop` in [backend/lib/backend_web/router.ex](file:///Users/eldyreynanda/Developer/Antigravity/iris-project-gemini/backend/lib/backend_web/router.ex) and wire them in [backend/lib/backend_web/controllers/destination_controller.ex](file:///Users/eldyreynanda/Developer/Antigravity/iris-project-gemini/backend/lib/backend_web/controllers/destination_controller.ex).
-    *   [ ] **Frontend Actions:** Update [app/destinations/page.tsx](file:///Users/eldyreynanda/Developer/Antigravity/iris-project-gemini/app/destinations/page.tsx) to:
+    *   [x] **Start/Stop Endpoints:** Add POST `/api/destinations/:id/start` and POST `/api/destinations/:id/stop` in [backend/lib/backend_web/router.ex](file:///Users/eldyreynanda/Developer/Antigravity/iris-project-gemini/backend/lib/backend_web/router.ex) and wire them in [backend/lib/backend_web/controllers/destination_controller.ex](file:///Users/eldyreynanda/Developer/Antigravity/iris-project-gemini/backend/lib/backend_web/controllers/destination_controller.ex).
+    *   [x] **Frontend Actions:** Update [app/destinations/page.tsx](file:///Users/eldyreynanda/Developer/Antigravity/iris-project-gemini/app/destinations/page.tsx) to:
         *   Bind form inputs and submit to the API in the **Add Destination** dialog (with support for selecting RTMP or SRT platform types).
         *   Wire up the **Start** and **Stop** buttons to call the respective start/stop backend API endpoints.
 

@@ -26,7 +26,7 @@ defmodule Backend.Accounts.User do
     # Since we don't have bcrypt configured right now, we will do a simple generic hash 
     # to unblock the API creation tests and insert valid data
     # In production, replace this with Bcrypt.hash_pwd_salt(password)
-    
+
     hash = :crypto.hash(:sha256, password) |> Base.encode16() |> String.downcase()
     change(changeset, password_hash: hash)
   end

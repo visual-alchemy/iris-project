@@ -13,7 +13,7 @@ defmodule BackendWeb.FallbackController do
     |> put_view(html: BackendWeb.ErrorHTML, json: BackendWeb.ErrorJSON)
     |> render(:"404")
   end
-  
+
   # This clause catches validation errors from Ecto.
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn

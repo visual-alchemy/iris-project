@@ -12,6 +12,8 @@ defmodule Backend.Application do
       Backend.Repo,
       {DNSCluster, query: Application.get_env(:backend, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Backend.PubSub},
+      {Registry, keys: :unique, name: Backend.Streaming.PipelineRegistry},
+      {DynamicSupervisor, strategy: :one_for_one, name: Backend.Streaming.PipelineSupervisor},
       # Start a worker by calling: Backend.Worker.start_link(arg)
       # {Backend.Worker, arg},
       # Start to serve requests, typically the last entry
