@@ -54,9 +54,12 @@ defmodule Backend.Streaming.PipelineWorker do
             "!",
             "srtsink",
             "uri=#{target_url}",
+            "sync=false",
             "d.audio",
             "!",
             "aacparse",
+            "!",
+            "audio/mpeg, mpegversion=4, stream-format=adts",
             "!",
             "m."
           ]
