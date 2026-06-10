@@ -52,7 +52,7 @@ services:
     container_name: iris_frontend
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://192.168.1.27:4000/api
+      - BACKEND_API_URL=http://iris_api:4000
     ports:
       - "3000:3000"
     depends_on:

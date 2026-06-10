@@ -58,7 +58,7 @@ interface StreamKey {
   currentStream: boolean
 }
 
-import { getStreamKeys, createStreamKey, deleteStreamKey } from "@/lib/api"
+import { getStreamKeys, createStreamKey, deleteStreamKey, regenerateStreamKey } from "@/lib/api"
 
 import { ProtectedRoute } from "@/components/auth/protected-route"
 
@@ -152,21 +152,20 @@ export default function StreamKeysPage() {
   const handleRegenerateKey = async (id: string, name: string) => {
     if (!confirm(`Regenerate the key for "${name}"? The old key will stop working.`)) return;
     try {
-      await deleteStreamKey(id);
-      const newKey = await createStreamKey(name, true);
-      setStreamKeys(prev => {
-        const filtered = prev.filter(k => k.id.toString() !== id.toString());
-        return [{
-          id: newKey.id.toString(),
-          name: newKey.name,
-          keyString: newKey.key,
-          status: newKey.status,
-          ipWhitelist: [],
-          createdAt: "Just now",
-          lastUsed: "Never",
-          currentStream: false
-        }, ...filtered];
-      });
+      const newKey = await regenerateStreamKey(id);
+      setStreamKeys(prev =>
+        prev.map(k =>
+          k.id.toString() === id.toString()
+            ? {
+                ...k,
+                keyString: newKey.key,
+                status: newKey.status,
+                lastUsed: "Never",
+                currentStream: false
+              }
+            : k
+        )
+      );
     } catch (err) {
       alert("Failed to regenerate stream key");
       console.error(err);

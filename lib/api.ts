@@ -2,7 +2,10 @@ import { Stream } from "@/components/dashboard/stream-preview"
 
 function getApiUrl() {
   const isServer = typeof window === 'undefined';
-  if (isServer) return 'http://iris_api:4000/api';
+  if (isServer) {
+    const backendUrl = process.env.BACKEND_API_URL || 'http://iris_api:4000';
+    return `${backendUrl}/api`;
+  }
   return '/api';
 }
 
@@ -32,7 +35,7 @@ export async function getStreams(): Promise<Stream[]> {
       streamKey: item.streamKey,
       status: "live",
       bitrate: item.bitrate || "0 kbps",
-      viewers: 0,
+      viewers: item.viewers || 0,
       duration: item.uptime || "00:00:00",
       targets: item.destinationsCount || 0,
       readyTime: item.ready_time || null,

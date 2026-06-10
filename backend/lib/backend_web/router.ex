@@ -16,6 +16,7 @@ defmodule BackendWeb.Router do
     get "/database-stats", StreamController, :database_stats
     
     resources "/stream-keys", StreamKeyController, except: [:new, :edit, :show, :update]
+    post "/stream-keys/:id/regenerate", StreamKeyController, :regenerate
     resources "/destinations", DestinationController, except: [:new, :edit, :show, :update]
     resources "/users", UserController, except: [:new, :edit]
   end

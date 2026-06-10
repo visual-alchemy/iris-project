@@ -58,6 +58,40 @@ defmodule BackendWeb.StreamKeyController do
     end
   end
 
+  def regenerate(conn, %{"id" => id}) do
+    sk = Backend.Repo.get(StreamKey, id)
+    if sk do
+      new_key_string = generate_random_key(sk.name)
+
+      sk
+      |> StreamKey.changeset(%{key_string: new_key_string})
+      |> Backend.Repo.update()
+      |> case do
+        {:ok, updated_sk} ->
+          conn |> json(%{
+            id: updated_sk.id,
+            name: updated_sk.name,
+            key: updated_sk.key_string,
+            status: updated_sk.status
+          })
+        {:error, _changeset} ->
+          conn |> put_status(:unprocessable_entity) |> json(%{error: "Failed to regenerate stream key"})
+      end
+    else
+      conn |> put_status(:not_found) |> json(%{error: "Not found"})
+    end
+  end
+
+  defp generate_random_key(name) do
+    base = name
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9\-_]/, "")
+    |> String.replace(~r/\s+/, "-")
+
+    suffix = :crypto.strong_rand_bytes(6) |> Base.encode16(case: :lower)
+    "#{base}-#{suffix}"
+  end
+
   # Check MediaMTX for which stream keys actually have an active RTMP connection
   defp fetch_live_key_strings do
     case :httpc.request(:get, {~c"http://iris_mediamtx:9997/v3/paths/list", []}, [timeout: 3000], []) do

@@ -8,10 +8,11 @@ const nextConfig = {
   },
   output: 'standalone',
   async rewrites() {
+    const backendUrl = process.env.BACKEND_API_URL || 'http://iris_api:4000';
     return [
       {
         source: '/api/:path*',
-        destination: 'http://iris_api:4000/api/:path*'
+        destination: `${backendUrl}/api/:path*`
       }
     ]
   }

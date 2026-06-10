@@ -14,6 +14,13 @@ defmodule BackendWeb.StreamController do
     # Fetch real-time data from MediaMTX API
     mediamtx_paths = fetch_mediamtx_paths()
 
+    # Query destination counts per stream_key_id
+    dest_counts = Backend.Repo.all(
+      from d in Backend.Streaming.Destination,
+      group_by: d.stream_key_id,
+      select: {d.stream_key_id, count(d.id)}
+    ) |> Map.new()
+
     # Only return streams that are actually live (have an active RTMP connection)
     data = active_keys
     |> Enum.map(fn sk ->
@@ -22,13 +29,15 @@ defmodule BackendWeb.StreamController do
     end)
     |> Enum.filter(fn {_sk, mtx_data} -> mtx_data != nil end)
     |> Enum.map(fn {sk, mtx_data} ->
+      readers = Map.get(mtx_data, "readers") || []
       %{
         id: sk.id,
         title: "Live Stream - #{sk.name}",
         streamKey: sk.key_string,
         bitrate: format_bitrate(mtx_data),
         uptime: format_uptime(mtx_data),
-        destinationsCount: 0,
+        destinationsCount: Map.get(dest_counts, sk.id, 0),
+        viewers: length(readers),
         ready_time: get_ready_time(mtx_data)
       }
     end)
