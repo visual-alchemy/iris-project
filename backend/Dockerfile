@@ -28,6 +28,7 @@ RUN mix do compile, release
 FROM alpine:3.18.4 AS app
 RUN apk add --no-cache libstdc++ ncurses-libs bash openssl \
     gstreamer \
+    gstreamer-tools \
     gst-plugins-base \
     gst-plugins-good \
     gst-plugins-bad \
