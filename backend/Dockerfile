@@ -41,14 +41,14 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-RUN chown nobody:nobody /app
+RUN chown nobody:nogroup /app
 
-COPY --from=build --chown=nobody:nobody /app/_build/prod/rel/backend ./
+COPY --from=build --chown=nobody:nogroup /app/_build/prod/rel/backend ./
 
-COPY --chown=nobody:nobody entrypoint.sh ./
+COPY --chown=nobody:nogroup entrypoint.sh ./
 RUN chmod +x entrypoint.sh
 
-USER nobody:nobody
+USER nobody:nogroup
 
 ENV HOME=/app
 
