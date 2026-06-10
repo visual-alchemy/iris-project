@@ -52,6 +52,7 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
       hls: `http://${getMediaHost()}:8888/live/${stream.streamKey}/index.m3u8`,
       webrtc: `http://${getMediaHost()}:8889/live/${stream.streamKey}`,
       flv: `http://${getMediaHost()}:8888/live/${stream.streamKey}.flv`,
+      srt: `srt://${getMediaHost()}:8890?streamid=read:live/${stream.streamKey}`,
     }
     : null
 
@@ -188,7 +189,7 @@ export function StreamPreview({ stream }: StreamPreviewProps) {
           </div>
         ) : (
           <div className="space-y-2">
-            {["rtmp", "hls", "webrtc", "flv"].map((type) => (
+            {["rtmp", "hls", "webrtc", "flv", "srt"].map((type) => (
               <div
                 key={type}
                 className="flex items-center gap-2 rounded-lg bg-secondary/50 p-2"

@@ -25,6 +25,10 @@ rtmpAddress: :1935
 hls: yes
 hlsAddress: :8888
 
+# SRT settings
+srt: yes
+srtAddress: :8890
+
 ###############################################
 # Path settings
 
