@@ -1,0 +1,33 @@
+###############################################
+# Global settings
+
+# Authentication settings
+authMethod: http
+authHTTPAddress: "http://iris_api:4000/api/auth/mediamtx"
+authHTTPExclude:
+  - action: api
+  - action: metrics
+  - action: pprof
+
+# API settings
+api: yes
+apiAddress: :9997
+
+# WebRTC settings
+webrtc: yes
+webrtcAddress: :8889
+
+# RTMP settings
+rtmp: yes
+rtmpAddress: :1935
+
+# HLS settings
+hls: yes
+hlsAddress: :8888
+
+###############################################
+# Path settings
+
+paths:
+  # Catch-all path for streams
+  all_others:

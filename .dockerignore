@@ -1,0 +1,19 @@
+# Next.js
+node_modules
+.next
+.git
+
+# env files
+.env*.local
+.env
+
+# cache
+.pnpm-store
+
+# other
+*.log
+docker-compose.yml
+Dockerfile
+backend/
+mediamtx.yml
+IRIS_PRD.md

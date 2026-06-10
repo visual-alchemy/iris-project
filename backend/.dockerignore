@@ -1,0 +1,11 @@
+# build
+_build/
+deps/
+*.beam
+
+# other
+.git/
+*.log
+.DS_Store
+.env
+.env.*

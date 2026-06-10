@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: iris_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: iris_engine_dev
+    ports:
+      - "5433:5432"
+    volumes:
+      - iris_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: iris_mediamtx
+    ports:
+      - "8554:8554" # RTSP
+      - "1935:1935" # RTMP
+      - "8888:8888" # HLS
+      - "8889:8889" # WebRTC
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
+    restart: unless-stopped
+    depends_on:
+      - iris_api
+
+  iris_api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: iris_api
+    environment:
+      - DATABASE_URL=ecto://postgres:postgres@postgres:5432/iris_engine_dev
+      - SECRET_KEY_BASE=YOUR_SECRET_KEY_BASE_HERE
+      - PHX_SERVER=true
+      - PHX_HOST=localhost
+    ports:
+      - "4000:4000"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: iris_frontend
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://192.168.1.27:4000/api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - iris_api
+    restart: unless-stopped
+
+volumes:
+  iris_db_data:
