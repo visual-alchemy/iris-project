@@ -1,7 +1,7 @@
-FROM elixir:1.15-alpine AS build
+FROM elixir:1.15 AS build
 
 # install build dependencies
-RUN apk add --no-cache build-base npm git python3
+RUN apt-get update && apt-get install -y build-essential npm git python3 && rm -rf /var/lib/apt/lists/*
 
 # prepare build dir
 WORKDIR /app
@@ -14,7 +14,6 @@ RUN mix local.hex --force && \
 ENV MIX_ENV=prod
 
 # install mix dependencies
-# install mix dependencies
 COPY mix.exs mix.lock ./
 COPY config config
 RUN mix do deps.get, deps.compile
@@ -25,26 +24,31 @@ COPY lib lib
 RUN mix do compile, release
 
 # prepare release image
-FROM alpine:3.18.4 AS app
-RUN apk add --no-cache libstdc++ ncurses-libs bash openssl \
-    gstreamer \
-    gstreamer-tools \
-    gst-plugins-base \
-    gst-plugins-good \
-    gst-plugins-bad \
-    gst-plugins-ugly \
-    gst-libav
+FROM debian:bookworm-slim AS app
+RUN apt-get update && apt-get install -y \
+    libstdc++6 \
+    libncurses6 \
+    bash \
+    openssl \
+    ca-certificates \
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 RUN chown nobody:nobody /app
 
-USER nobody:nobody
-
 COPY --from=build --chown=nobody:nobody /app/_build/prod/rel/backend ./
 
 COPY --chown=nobody:nobody entrypoint.sh ./
 RUN chmod +x entrypoint.sh
+
+USER nobody:nobody
 
 ENV HOME=/app
 
