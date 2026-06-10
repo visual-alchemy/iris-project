@@ -36,6 +36,9 @@ USER nobody:nobody
 
 COPY --from=build --chown=nobody:nobody /app/_build/prod/rel/backend ./
 
+COPY --chown=nobody:nobody entrypoint.sh ./
+RUN chmod +x entrypoint.sh
+
 ENV HOME=/app
 
-CMD ["bin/backend", "start"]
+CMD ["./entrypoint.sh"]
