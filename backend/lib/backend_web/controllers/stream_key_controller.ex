@@ -30,7 +30,10 @@ defmodule BackendWeb.StreamKeyController do
     name = Map.get(stream_key_params, "name")
     status = Map.get(stream_key_params, "status", "inactive")
 
-    key_string = "iris_" <> Base.encode16(:crypto.strong_rand_bytes(10), case: :lower)
+    key_string = name
+    |> String.downcase()
+    |> String.replace(~r/[^a-z0-9\-_]/, "")
+    |> String.replace(~r/\s+/, "-")
 
     %StreamKey{}
     |> StreamKey.changeset(%{name: name, key_string: key_string, status: status})
@@ -64,7 +67,7 @@ defmodule BackendWeb.StreamKeyController do
             items
             |> Enum.filter(fn path -> Map.get(path, "ready", false) == true end)
             |> Enum.map(fn path ->
-              # Path name format: "live/iris_xxxx"
+              # Path name format: "live/keyname"
               Map.get(path, "name", "")
               |> String.split("/")
               |> List.last()
