@@ -40,8 +40,6 @@ import {
   MoreVertical,
   Copy,
   Check,
-  Eye,
-  EyeOff,
   Key,
   Trash2,
   RefreshCw,
@@ -69,7 +67,6 @@ export default function StreamKeysPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   const [searchQuery, setSearchQuery] = useState("")
-  const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set())
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
 
   // Dialog Form State
@@ -104,18 +101,6 @@ export default function StreamKeysPage() {
     })
     return () => { mounted = false }
   }, [])
-
-  const toggleKeyVisibility = (id: string) => {
-    setVisibleKeys((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return next
-    })
-  }
 
   const copyKey = (id: string, key: string) => {
     copyText(key)
@@ -186,10 +171,6 @@ export default function StreamKeysPage() {
       alert("Failed to regenerate stream key");
       console.error(err);
     }
-  }
-
-  const maskKey = (key: string) => {
-    return key.slice(0, 10) + "••••••••••••"
   }
 
   const filteredKeys = streamKeys.filter(
@@ -312,22 +293,8 @@ export default function StreamKeysPage() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <code className="rounded bg-secondary px-2 py-1 font-mono text-xs">
-                        {visibleKeys.has(key.id)
-                          ? key.keyString
-                          : maskKey(key.keyString)}
+                        {key.keyString}
                       </code>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7"
-                        onClick={() => toggleKeyVisibility(key.id)}
-                      >
-                        {visibleKeys.has(key.id) ? (
-                          <EyeOff className="h-3.5 w-3.5" />
-                        ) : (
-                          <Eye className="h-3.5 w-3.5" />
-                        )}
-                      </Button>
                       <Button
                         size="icon"
                         variant="ghost"
