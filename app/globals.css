@@ -3,44 +3,66 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ── I.R.I.S. TACTICAL TELEMETRY TERMINAL ── */
 :root {
-  --background: oklch(0.11 0.005 285);
-  --foreground: oklch(0.95 0 0);
-  --card: oklch(0.14 0.005 285);
-  --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.14 0.005 285);
-  --popover-foreground: oklch(0.95 0 0);
-  --primary: oklch(0.72 0.19 160);
-  --primary-foreground: oklch(0.11 0.005 285);
-  --secondary: oklch(0.22 0.005 285);
-  --secondary-foreground: oklch(0.95 0 0);
-  --muted: oklch(0.22 0.005 285);
-  --muted-foreground: oklch(0.65 0 0);
-  --accent: oklch(0.72 0.19 160);
-  --accent-foreground: oklch(0.11 0.005 285);
-  --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: oklch(0.95 0 0);
-  --border: oklch(0.25 0.005 285);
-  --input: oklch(0.18 0.005 285);
-  --ring: oklch(0.72 0.19 160);
-  --chart-1: oklch(0.72 0.19 160);
-  --chart-2: oklch(0.65 0.2 250);
-  --chart-3: oklch(0.7 0.15 50);
-  --chart-4: oklch(0.55 0.2 25);
-  --chart-5: oklch(0.75 0.12 200);
-  --radius: 0.5rem;
-  --sidebar: oklch(0.09 0.005 285);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.72 0.19 160);
-  --sidebar-primary-foreground: oklch(0.11 0.005 285);
-  --sidebar-accent: oklch(0.18 0.005 285);
-  --sidebar-accent-foreground: oklch(0.95 0 0);
-  --sidebar-border: oklch(0.22 0.005 285);
-  --sidebar-ring: oklch(0.72 0.19 160);
-  --success: oklch(0.72 0.19 160);
-  --success-foreground: oklch(0.11 0.005 285);
-  --warning: oklch(0.75 0.15 80);
-  --warning-foreground: oklch(0.11 0.005 285);
+  --crt-bg:    #0A0A0A;
+  --crt-raised:#0F0F0F;
+  --crt-panel: #131313;
+  --crt-field: #161616;
+  --phos-white:   #EAEAEA;
+  --phos-dim:     #7A7A7A;
+  --phos-faint:   #555555;
+  --sig-green:    #4AF626;
+  --sig-amber:    #D4A017;
+  --sig-red:      #E61919;
+  --sig-green-dim:rgba(74, 246, 38, 0.12);
+  --sig-red-dim:  rgba(230, 25, 25, 0.12);
+  --grid-line:    #1C1C1C;
+  --grid-strong:  #2A2A2A;
+  --radius: 0rem;
+}
+
+:root {
+  --background:         var(--crt-bg);
+  --foreground:         var(--phos-white);
+  --card:               var(--crt-panel);
+  --card-foreground:    var(--phos-white);
+  --popover:            var(--crt-raised);
+  --popover-foreground: var(--phos-white);
+  --primary:            var(--phos-white);
+  --primary-foreground: var(--crt-bg);
+  --secondary:          var(--crt-field);
+  --secondary-foreground: var(--phos-white);
+  --muted:              var(--crt-field);
+  --muted-foreground:   var(--phos-dim);
+  --accent:             var(--phos-white);
+  --accent-foreground:  var(--crt-bg);
+  --destructive:        var(--sig-red);
+  --destructive-foreground: var(--phos-white);
+  --border:             var(--grid-line);
+  --input:              var(--crt-field);
+  --ring:               var(--sig-green);
+  --chart-1: var(--sig-green);
+  --chart-2: var(--phos-white);
+  --chart-3: var(--sig-amber);
+  --chart-4: var(--sig-red);
+  --chart-5: var(--phos-dim);
+  --success:            var(--sig-green);
+  --success-foreground: var(--crt-bg);
+  --success-muted:      var(--sig-green-dim);
+  --warning:            var(--sig-amber);
+  --warning-foreground: var(--crt-bg);
+  --warning-muted:      rgba(212, 160, 23, 0.12);
+  --info:               var(--phos-dim);
+  --info-foreground:    var(--phos-white);
+  --sidebar:            #070707;
+  --sidebar-foreground: var(--phos-white);
+  --sidebar-primary:    var(--sig-green);
+  --sidebar-primary-foreground: var(--crt-bg);
+  --sidebar-accent:     var(--crt-field);
+  --sidebar-accent-foreground: var(--phos-white);
+  --sidebar-border:     var(--grid-line);
+  --sidebar-ring:       var(--sig-green);
 }
 
 @theme inline {
@@ -70,10 +92,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -84,15 +106,81 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-warning-muted: var(--warning-muted);
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
+  *, *::before, *::after { border-color: var(--grid-line); }
+  * { outline-color: var(--sig-green); border-radius: 0 !important; }
   body {
-    @apply bg-background text-foreground;
+    background: var(--crt-bg);
+    color: var(--phos-white);
+    font-family: var(--font-mono);
+    font-size: 15px;
+    line-height: 1.5;
+    font-feature-settings: 'tnum' 1;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
   }
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    pointer-events: none;
+    opacity: 0.015;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+  }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--grid-strong); }
+  ::selection { background: rgba(74, 246, 38, 0.15); color: var(--phos-white); }
+  hr { border-color: var(--grid-strong); border-style: solid; border-width: 1px 0 0 0; }
+  :focus-visible { outline: 1px solid var(--sig-green); outline-offset: 0; }
+}
+
+@utility font-data {
+  font-family: var(--font-mono);
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: 0.04em;
+}
+@utility font-heading {
+  font-family: var(--font-sans);
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+@utility font-label {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+  color: var(--phos-dim);
+}
+@utility lamp-green {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--sig-green);
+  box-shadow: 0 0 6px var(--sig-green), 0 0 12px var(--sig-green);
+  flex-shrink: 0;
+}
+@utility lamp-amber {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--sig-amber);
+  box-shadow: 0 0 6px var(--sig-amber);
+  flex-shrink: 0;
+}
+@utility lamp-red {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--sig-red);
+  box-shadow: 0 0 6px var(--sig-red);
+  flex-shrink: 0;
 }

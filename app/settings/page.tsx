@@ -1,373 +1,108 @@
 "use client"
 
 import { copyToClipboard as copyText } from "@/lib/clipboard"
-
 import { useState, useEffect } from "react"
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import {
-  Server,
-  Shield,
-  Database,
-  Copy,
-  Check,
-  RefreshCw,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-
+import { Copy, Check, RefreshCw } from "lucide-react"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { getServerStats, getDatabaseStats } from "@/lib/api"
 
 export default function SettingsPage() {
   const [copied, setCopied] = useState<string | null>(null)
-  const [serverStats, setServerStats] = useState({ version: "v1.16.2", uptime: "-", connections: 0 });
-  const [dbStats, setDbStats] = useState({ records: 0, size: "0 MB", lastBackup: "-" });
-  const [uptimeSeconds, setUptimeSeconds] = useState(0);
+  const [serverStats, setServerStats] = useState({ version: "v1.16.2", uptime: "-", connections: 0 })
+  const [dbStats, setDbStats] = useState({ records: 0, size: "0 MB", lastBackup: "-" })
+  const [uptimeSeconds, setUptimeSeconds] = useState(0)
 
   useEffect(() => {
-    getServerStats().then((stats) => {
-      setServerStats(stats);
-      // Parse uptime string like "3:45:12" into seconds
-      const parts = stats.uptime.split(":").map(Number);
-      if (parts.length === 3) {
-        setUptimeSeconds(parts[0] * 3600 + parts[1] * 60 + parts[2]);
-      }
-    });
-    getDatabaseStats().then(setDbStats);
-  }, []);
+    getServerStats().then(s => { setServerStats(s); const p = s.uptime.split(":").map(Number); if(p.length===3) setUptimeSeconds(p[0]*3600+p[1]*60+p[2]) })
+    getDatabaseStats().then(setDbStats)
+  }, [])
 
-  // Real-time uptime ticker
   useEffect(() => {
-    if (uptimeSeconds === 0) return;
-    const interval = setInterval(() => {
-      setUptimeSeconds(prev => prev + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [uptimeSeconds > 0]);
+    if (!uptimeSeconds) return
+    const t = setInterval(() => setUptimeSeconds(p => p + 1), 1000)
+    return () => clearInterval(t)
+  }, [uptimeSeconds > 0])
 
-  const formatUptime = (totalSeconds: number) => {
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = totalSeconds % 60;
-    return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  };
-
-  const copyToClipboard = (text: string, key: string) => {
-    copyText(text)
-    setCopied(key)
-    setTimeout(() => setCopied(null), 2000)
-  }
+  const fmtUptime = (s: number) => { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60; return `${h}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}` }
+  const copier = (t: string, k: string) => { copyText(t); setCopied(k); setTimeout(() => setCopied(null), 2000) }
 
   return (
     <ProtectedRoute>
-      <DashboardLayout
-        title="Settings"
-        description="Configure your I.R.I.S. streaming gateway"
-      >
-        <Tabs defaultValue="server" className="space-y-6">
-          <TabsList className="bg-secondary">
-            <TabsTrigger value="server">
-              <Server className="mr-2 h-4 w-4" />
-              Server
-            </TabsTrigger>
-            <TabsTrigger value="security">
-              <Shield className="mr-2 h-4 w-4" />
-              Security
-            </TabsTrigger>
-            <TabsTrigger value="database">
-              <Database className="mr-2 h-4 w-4" />
-              Database
-            </TabsTrigger>
+      <DashboardLayout title="SETTINGS" description="Gateway configuration">
+        <Tabs defaultValue="server" className="space-y-2">
+          <TabsList className="border border-grid-line bg-crt-panel p-0 h-auto gap-0 inline-flex">
+            {["server","security","database"].map(t => <TabsTrigger key={t} value={t} className="border-r border-grid-line last:border-0 font-data text-sm tracking-[0.1em] uppercase data-[state=active]:bg-sig-green-dim data-[state=active]:text-sig-green py-2 px-3">{t}</TabsTrigger>)}
           </TabsList>
 
-          {/* Server Settings */}
-          <TabsContent value="server" className="space-y-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-foreground">
-                MediaMTX Configuration
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Core streaming server settings
-              </p>
-
-              <div className="mt-6 space-y-6">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>RTMP Port</Label>
-                    <Input defaultValue="1935" readOnly />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>HLS Port</Label>
-                    <Input defaultValue="8888" readOnly />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>WebRTC Port</Label>
-                    <Input defaultValue="8889" readOnly />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Port</Label>
-                    <Input defaultValue="4000" readOnly />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                  <div>
-                    <Label>Auto-restart on Failure</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Automatically restart MediaMTX if it crashes (Managed by Docker)
-                    </p>
-                  </div>
-                  <Switch checked={true} disabled />
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                  <div>
-                    <Label>Enable WebRTC Playback</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Ultra-low latency WebRTC streams
-                    </p>
-                  </div>
-                  <Switch checked={true} disabled />
-                </div>
+          <TabsContent value="server" className="space-y-2">
+            <div className="border border-grid-line bg-crt-panel p-3">
+              <div className="text-xs font-data tracking-[0.1em] text-phos-dim mb-3">[ MEDIAMTX CONFIGURATION ]</div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[{l:"RTMP PORT",v:"1935"},{l:"HLS PORT",v:"8888"},{l:"WEBRTC PORT",v:"8889"},{l:"API PORT",v:"4000"}].map(f => (
+                  <div key={f.l} className="space-y-1"><Label className="text-[11px] font-data tracking-[0.08em]">{f.l}</Label><Input defaultValue={f.v} readOnly className="h-8 text-sm" /></div>
+                ))}
               </div>
-            </Card>
-
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-foreground">
-                Server Status
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Current server health and connections
-              </p>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-lg border border-border p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      MediaMTX
-                    </span>
-                    <Badge className="bg-success text-success-foreground">
-                      Online
-                    </Badge>
-                  </div>
-                  <p className="mt-2 text-xl font-semibold text-foreground">
-                    {serverStats.version}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-border p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Uptime</span>
-                    <Badge variant="outline">Running</Badge>
-                  </div>
-                  <p className="mt-2 font-mono text-xl font-semibold text-foreground">
-                    {uptimeSeconds > 0 ? formatUptime(uptimeSeconds) : serverStats.uptime}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-border p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      Connections
-                    </span>
-                    <Badge variant="outline">Active</Badge>
-                  </div>
-                  <p className="mt-2 text-xl font-semibold text-foreground">
-                    {serverStats.connections} clients
-                  </p>
-                </div>
+              <div className="mt-2 space-y-1.5">
+                {[{l:"AUTO-RESTART ON FAILURE",d:"Docker managed",c:true},{l:"ENABLE WEBRTC PLAYBACK",d:"Ultra-low latency",c:true}].map(i => (
+                  <div key={i.l} className="flex items-center justify-between border border-grid-line px-2 py-2"><div><Label className="text-xs">{i.l}</Label><p className="text-[11px] text-phos-faint">{i.d}</p></div><Switch checked={i.c} disabled /></div>
+                ))}
               </div>
-            </Card>
+            </div>
+            <div className="border border-grid-line bg-crt-panel p-3">
+              <div className="text-xs font-data tracking-[0.1em] text-phos-dim mb-3">[ SYSTEM STATUS ]</div>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="border border-grid-line p-2"><div className="flex items-center justify-between text-[11px] font-data tracking-[0.08em] text-phos-faint"><span>MEDIAMTX</span><span className="flex items-center gap-1 text-sig-green"><span className="lamp-green" />ONLN</span></div><div className="mt-1 font-data text-lg text-phos-white">{serverStats.version}</div></div>
+                <div className="border border-grid-line p-2"><div className="text-[11px] font-data tracking-[0.08em] text-phos-faint">UPTIME</div><div className="mt-1 font-data text-lg text-phos-white">{uptimeSeconds>0?fmtUptime(uptimeSeconds):serverStats.uptime}</div></div>
+                <div className="border border-grid-line p-2"><div className="text-[11px] font-data tracking-[0.08em] text-phos-faint">CONNECTIONS</div><div className="mt-1 font-data text-lg text-phos-white">{serverStats.connections} CLIENTS</div></div>
+              </div>
+            </div>
           </TabsContent>
 
-          {/* Security Settings */}
-          <TabsContent value="security" className="space-y-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-foreground">
-                Authentication
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Configure authentication settings
-              </p>
-
-              <div className="mt-6 space-y-6">
-                <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                  <div>
-                    <Label>Require Stream Key Validation</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Validate stream keys via Elixir auth Webhook before accepting ingest
-                    </p>
-                  </div>
-                  <Switch checked={true} disabled />
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                  <div>
-                    <Label>IP Whitelist Enforcement</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Only allow streams from whitelisted IPs
-                    </p>
-                  </div>
-                  <Switch checked={false} />
-                </div>
+          <TabsContent value="security" className="space-y-2">
+            <div className="border border-grid-line bg-crt-panel p-3">
+              <div className="text-xs font-data tracking-[0.1em] text-phos-dim mb-3">[ AUTHENTICATION ]</div>
+              <div className="space-y-1.5">
+                {[{l:"REQUIRE KEY VALIDATION",d:"Webhook auth before ingest",c:true},{l:"IP WHITELIST ENFORCEMENT",d:"Restrict by IP",c:false}].map(i => (
+                  <div key={i.l} className="flex items-center justify-between border border-grid-line px-2 py-2"><div><Label className="text-xs">{i.l}</Label><p className="text-[11px] text-phos-faint">{i.d}</p></div><Switch checked={i.c} disabled={i.c} /></div>
+                ))}
               </div>
-            </Card>
-
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-foreground">API Keys</h3>
-              <p className="text-sm text-muted-foreground">
-                Manage API access credentials
-              </p>
-
-              <div className="mt-6 space-y-4">
-                <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                  <div className="flex-1">
-                    <Label>Public API Key</Label>
-                    <div className="mt-2 flex items-center gap-2">
-                      <code className="rounded bg-secondary px-3 py-1.5 font-mono text-xs">
-                        pk_live_abc123def456ghi789jkl012
-                      </code>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7"
-                        onClick={() =>
-                          copyToClipboard(
-                            "pk_live_abc123def456ghi789jkl012",
-                            "public"
-                          )
-                        }
-                      >
-                        {copied === "public" ? (
-                          <Check className="h-3.5 w-3.5 text-success" />
-                        ) : (
-                          <Copy className="h-3.5 w-3.5" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => alert("API key regenerated! (placeholder)")}>
-                    <RefreshCw className="mr-2 h-3.5 w-3.5" />
-                    Regenerate
-                  </Button>
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                  <div className="flex-1">
-                    <Label>Secret API Key</Label>
-                    <div className="mt-2 flex items-center gap-2">
-                      <code className="rounded bg-secondary px-3 py-1.5 font-mono text-xs">
-                        {"sk_live_••••••••••••••••••••••••"}
-                      </code>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7"
-                        onClick={() =>
-                          copyToClipboard(
-                            "••••••••••••••••••••••••••",
-                            "secret"
-                          )
-                        }
-                      >
-                        {copied === "secret" ? (
-                          <Check className="h-3.5 w-3.5 text-success" />
-                        ) : (
-                          <Copy className="h-3.5 w-3.5" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={() => alert("Secret key regenerated! (placeholder)")}>
-                    <RefreshCw className="mr-2 h-3.5 w-3.5" />
-                    Regenerate
-                  </Button>
-                </div>
+            </div>
+            <div className="border border-grid-line bg-crt-panel p-3">
+              <div className="text-xs font-data tracking-[0.1em] text-phos-dim mb-3">[ API KEYS ]</div>
+              <div className="space-y-2">
+                {[{l:"PUBLIC KEY",k:"pk_live_abc123def456ghi789jkl012",ck:"pub"},{l:"SECRET KEY",k:"sk_live_••••••••••••••••••••••••",ck:"sec"}].map(item => (
+                  <div key={item.ck} className="flex items-center justify-between border border-grid-line px-2 py-2"><div className="min-w-0 flex-1"><Label className="text-xs">{item.l}</Label><div className="mt-1 flex items-center gap-1"><code className="text-xs font-data text-phos-white/70 truncate">{item.k}</code><Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copier(item.k, item.ck)}>{copied===item.ck?<Check className="h-3 w-3 text-sig-green" />:<Copy className="h-3 w-3" />}</Button></div></div><Button variant="outline" size="sm" onClick={() => alert("Regenerated!")} className="shrink-0 ml-2"><RefreshCw className="h-3 w-3" />REGEN</Button></div>
+                ))}
               </div>
-            </Card>
+            </div>
           </TabsContent>
 
-          {/* Database Settings */}
-          <TabsContent value="database" className="space-y-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-foreground">
-                PostgreSQL Connection
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Database connection settings (Docker Environment)
-              </p>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Host</Label>
-                  <Input defaultValue="postgres" readOnly />
-                </div>
-                <div className="space-y-2">
-                  <Label>Port</Label>
-                  <Input defaultValue="5432" readOnly />
-                </div>
-                <div className="space-y-2">
-                  <Label>Database</Label>
-                  <Input defaultValue="iris_engine_dev" readOnly />
-                </div>
-                <div className="space-y-2">
-                  <Label>Username</Label>
-                  <Input defaultValue="postgres" readOnly />
-                </div>
+          <TabsContent value="database" className="space-y-2">
+            <div className="border border-grid-line bg-crt-panel p-3">
+              <div className="text-xs font-data tracking-[0.1em] text-phos-dim mb-3">[ POSTGRESQL CONNECTION ]</div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[{l:"HOST",v:"postgres"},{l:"PORT",v:"5432"},{l:"DATABASE",v:"iris_engine_dev"},{l:"USER",v:"postgres"}].map(f => (
+                  <div key={f.l} className="space-y-1"><Label className="text-[11px] font-data tracking-[0.08em]">{f.l}</Label><Input defaultValue={f.v} readOnly className="h-8 text-sm" /></div>
+                ))}
               </div>
-
-              <div className="mt-6">
-                <Badge className="bg-success text-success-foreground">
-                  Connected
-                </Badge>
+              <div className="mt-2 text-sm font-data text-sig-green"><span className="lamp-green inline-block mr-1" />CONNECTED</div>
+            </div>
+            <div className="border border-grid-line bg-crt-panel p-3">
+              <div className="text-xs font-data tracking-[0.1em] text-phos-dim mb-3">[ DATABASE STATISTICS ]</div>
+              <div className="grid grid-cols-3 gap-2">
+                {[{l:"RECORDS",v:dbStats.records.toLocaleString()},{l:"SIZE",v:dbStats.size},{l:"LAST BACKUP",v:dbStats.lastBackup}].map(s => (
+                  <div key={s.l} className="border border-grid-line p-2"><div className="text-[11px] font-data tracking-[0.08em] text-phos-faint">{s.l}</div><div className="mt-1 font-data text-lg text-phos-white">{s.v}</div></div>
+                ))}
               </div>
-            </Card>
-
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-foreground">
-                Database Statistics
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Current database usage
-              </p>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-lg border border-border p-4">
-                  <span className="text-sm text-muted-foreground">
-                    Total Records
-                  </span>
-                  <p className="mt-2 text-xl font-semibold text-foreground">
-                    {dbStats.records.toLocaleString()}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-border p-4">
-                  <span className="text-sm text-muted-foreground">
-                    Database Size
-                  </span>
-                  <p className="mt-2 text-xl font-semibold text-foreground">
-                    {dbStats.size}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-border p-4">
-                  <span className="text-sm text-muted-foreground">
-                    Last Backup
-                  </span>
-                  <p className="mt-2 text-xl font-semibold text-foreground">
-                    {dbStats.lastBackup}
-                  </p>
-                </div>
-              </div>
-            </Card>
+            </div>
           </TabsContent>
         </Tabs>
-
-        <div className="mt-6 flex justify-end">
-          <Button onClick={() => alert("Settings saved!")}>Save Changes</Button>
-        </div>
       </DashboardLayout>
     </ProtectedRoute>
   )

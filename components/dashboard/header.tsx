@@ -1,15 +1,8 @@
 "use client"
 
-import { ChevronDown } from "lucide-react"
+import { useEffect, useState } from "react"
+import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { MobileSidebar } from "./sidebar"
 import { useAuth } from "@/lib/auth"
 import { useRouter } from "next/navigation"
@@ -22,54 +15,79 @@ interface HeaderProps {
 export function Header({ title, description }: HeaderProps) {
   const { user, logout } = useAuth()
   const router = useRouter()
+  const [time, setTime] = useState("")
+  const [uptime, setUptime] = useState("00:00:00")
+
+  useEffect(() => {
+    setTime(new Date().toTimeString().slice(0, 8))
+    const t = setInterval(() => setTime(new Date().toTimeString().slice(0, 8)), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    const start = Date.now()
+    const u = setInterval(() => {
+      const d = new Date(Date.now() - start)
+      setUptime(
+        [d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds()]
+          .map(v => String(v).padStart(2, "0"))
+          .join(":")
+      )
+    }, 1000)
+    return () => clearInterval(u)
+  }, [])
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 lg:px-6">
-      <div className="flex items-center gap-3">
-        <MobileSidebar />
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">{title}</h1>
-          {description && (
-            <p className="hidden text-sm text-muted-foreground sm:block">{description}</p>
-          )}
+    <header className="sticky top-0 z-30 border-b border-grid-line bg-crt-bg/95 backdrop-blur-sm">
+      {/* Status strip */}
+      <div className="flex h-8 items-center gap-3 border-b border-grid-line px-3 text-[12px] font-data tracking-[0.08em] text-phos-faint">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5">
+            <span className="lamp-green" />
+            INGEST:1935
+          </span>
+          <span className="text-phos-dim">|</span>
+          <span className="flex items-center gap-1.5">
+            <span className="lamp-green" />
+            MTX:ONLN
+          </span>
+          <span className="text-phos-dim">|</span>
+          <span className="flex items-center gap-1.5">
+            <span className="lamp-green" />
+            API:4000
+          </span>
+        </div>
+        <div className="ml-auto flex items-center gap-3">
+          <span>UPT: {uptime}</span>
+          <span className="text-phos-dim">|</span>
+          <span>SYS: {time}</span>
+          <span className="text-phos-dim">|</span>
+          <span>UNIT: S00-{user?.username?.slice(0, 4).toUpperCase() || "OP01"}</span>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* User menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="flex items-center gap-2 px-2"
-            >
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                  AD
-                </AvatarFallback>
-              </Avatar>
-              <div className="hidden flex-col items-start text-left md:flex">
-                <span className="text-sm font-medium">Admin</span>
-                <span className="text-xs text-muted-foreground">
-                  admin@iris.io
-                </span>
-              </div>
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => router.push("/settings")}>
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/settings")}>
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive" onClick={() => logout()}>
-              Log out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {/* Title bar */}
+      <div className="flex h-8 items-center justify-between px-3">
+        <div className="flex items-center gap-2">
+          <MobileSidebar />
+          <span className="text-sm font-heading tracking-tighter text-phos-white">
+            {title.toUpperCase()}
+          </span>
+          {description && (
+            <span className="hidden sm:inline text-xs font-data tracking-[0.06em] text-phos-dim">
+              // {description}
+            </span>
+          )}
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 gap-1 text-[9px] tracking-[0.12em] text-phos-dim hover:text-sig-red"
+          onClick={() => logout()}
+        >
+          <LogOut className="h-3 w-3" />
+          SIGNOUT
+        </Button>
       </div>
     </header>
   )

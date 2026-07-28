@@ -1,16 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MoreVertical, ExternalLink, Square, Play } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { MoreVertical, Square } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { Stream } from "./stream-preview"
 
@@ -24,25 +17,16 @@ function formatDuration(readyTime: string | null | undefined): string {
   if (!readyTime) return "00:00:00"
   try {
     const start = new Date(readyTime).getTime()
-    const now = Date.now()
-    const diffSec = Math.max(0, Math.floor((now - start) / 1000))
+    const diffSec = Math.max(0, Math.floor((Date.now() - start) / 1000))
     const h = Math.floor(diffSec / 3600)
     const m = Math.floor((diffSec % 3600) / 60)
     const s = diffSec % 60
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
-  } catch {
-    return "00:00:00"
-  }
+  } catch { return "00:00:00" }
 }
 
-export function ActiveStreams({
-  streams,
-  selectedStream,
-  onSelectStream,
-}: ActiveStreamsProps) {
+export function ActiveStreams({ streams, selectedStream, onSelectStream }: ActiveStreamsProps) {
   const [, setTick] = useState(0)
-
-  // Tick every second to update real-time durations
   useEffect(() => {
     if (streams.length === 0) return
     const interval = setInterval(() => setTick(t => t + 1), 1000)
@@ -50,109 +34,59 @@ export function ActiveStreams({
   }, [streams.length])
 
   return (
-    <Card>
-      <div className="flex items-center justify-between border-b border-border p-4">
-        <h3 className="font-semibold text-foreground">Active Streams</h3>
-        <Button variant="outline" size="sm">
-          View All
-        </Button>
+    <div className="border border-grid-line bg-crt-panel h-full flex flex-col">
+      <div className="flex items-center justify-between border-b border-grid-line px-2 py-1.5 shrink-0">
+        <span className="text-xs font-data tracking-[0.1em] text-phos-dim">[ STREAMS ]</span>
+        <span className="text-xs font-data text-phos-faint">{streams.length} UNIT{streams.length !== 1 ? "S" : ""}</span>
       </div>
-      <div className="divide-y divide-border">
+      <div className="divide-y divide-grid-line flex-1 overflow-auto">
         {streams.length === 0 ? (
-          <div className="flex items-center justify-center p-8 text-center">
-            <div>
-              <p className="text-sm text-muted-foreground">No active streams</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Streams will appear here when they go live
-              </p>
-            </div>
+          <div className="flex flex-col items-center justify-center py-8">
+            <span className="text-xs font-data tracking-[0.1em] text-phos-faint/40">NO ACTIVE STREAMS</span>
+            <span className="mt-1 text-[11px] font-data tracking-[0.1em] text-phos-faint/30">AWAITING INGEST</span>
           </div>
         ) : (
-          streams.map((stream) => {
+          streams.map((stream, i) => {
             const isSelected = selectedStream?.id === stream.id
             return (
               <div
                 key={stream.id}
                 className={cn(
-                  "flex items-center justify-between p-4 cursor-pointer transition-colors",
-                  isSelected
-                    ? "bg-primary/10 border-l-2 border-l-primary"
-                    : "hover:bg-secondary/50"
+                  "flex items-center justify-between px-2 py-2 cursor-pointer transition-colors",
+                  isSelected ? "bg-sig-green-dim border-l-2 border-sig-green" : "border-l-2 border-transparent hover:bg-crt-field"
                 )}
                 onClick={() => onSelectStream(stream)}
               >
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <div
-                      className={cn(
-                        "h-12 w-20 rounded-md flex items-center justify-center",
-                        isSelected ? "bg-primary/20" : "bg-muted"
-                      )}
-                    >
-                      <Play
-                        className={cn(
-                          "h-4 w-4",
-                          isSelected ? "text-primary" : "text-muted-foreground"
-                        )}
-                      />
-                    </div>
-                    <Badge className="absolute -right-1 -top-1 h-5 bg-destructive text-[10px] text-destructive-foreground">
-                      LIVE
-                    </Badge>
-                  </div>
-                  <div>
-                    <p
-                      className={cn(
-                        "font-medium",
-                        isSelected ? "text-primary" : "text-foreground"
-                      )}
-                    >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-data tracking-[0.1em] text-phos-faint">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="lamp-green" />
+                    <span className={cn("text-sm font-data truncate", isSelected ? "text-sig-green" : "text-phos-white/80")}>
                       {stream.name}
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="font-mono">{stream.streamKey}</span>
-                      <span>{stream.bitrate}</span>
-                    </div>
+                    </span>
+                  </div>
+                  <div className="mt-0.5 ml-6 flex items-center gap-2 text-[11px] font-data">
+                    <span className="text-phos-faint">{stream.streamKey}</span>
+                    <span className="text-grid-strong">|</span>
+                    <span className="text-phos-faint">{stream.bitrate}</span>
+                    <span className="text-grid-strong">|</span>
+                    <span className="text-phos-faint">{formatDuration(stream.readyTime)}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-right hidden md:block">
-                    <p className="text-sm font-mono text-foreground">
-                      {formatDuration(stream.readyTime)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">duration</p>
-                  </div>
-                  <div className="text-right hidden lg:block">
-                    <p className="text-sm font-medium text-foreground">
-                      {stream.targets}
-                    </p>
-                    <p className="text-xs text-muted-foreground">targets</p>
-                  </div>
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                  <span className="text-xs font-data text-phos-faint">{stream.viewers}</span>
                   <DropdownMenu>
-                    <DropdownMenuTrigger
-                      asChild
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="h-4 w-4" />
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="icon" className="h-6 w-6">
+                        <MoreVertical className="h-3 w-3" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onSelectStream(stream)
-                        }}
-                      >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Preview Stream
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Square className="mr-2 h-4 w-4" />
-                        Stop Stream
+                    <DropdownMenuContent align="end" className="border-grid-strong bg-crt-panel">
+                      <DropdownMenuItem className="text-xs font-data text-sig-red" onClick={(e) => e.stopPropagation()}>
+                        <Square className="mr-1 h-3 w-3" />
+                        STOP STREAM
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -162,6 +96,6 @@ export function ActiveStreams({
           })
         )}
       </div>
-    </Card>
+    </div>
   )
 }

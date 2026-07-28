@@ -9,6 +9,39 @@ function getApiUrl() {
   return '/api';
 }
 
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('iris_token');
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+  return headers;
+}
+
+async function apiFetch(url: string, options: RequestInit = {}) {
+  const headers = {
+    ...getAuthHeaders(),
+    ...options.headers,
+  };
+
+  const res = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (res.status === 401) {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('iris_token');
+      localStorage.removeItem('iris_user');
+      window.location.href = '/login';
+    }
+  }
+
+  return res;
+}
+
 export async function login(username: string, password: string) {
   const res = await fetch(`${getApiUrl()}/login`, {
     method: 'POST',
@@ -25,7 +58,7 @@ export async function login(username: string, password: string) {
 
 export async function getStreams(): Promise<Stream[]> {
   try {
-    const res = await fetch(`${getApiUrl()}/streams`, { cache: 'no-store' });
+    const res = await apiFetch(`${getApiUrl()}/streams`, { cache: 'no-store' });
     if (!res.ok) return [];
 
     const data = await res.json();
@@ -48,7 +81,7 @@ export async function getStreams(): Promise<Stream[]> {
 
 export async function getStreamKeys() {
   try {
-    const res = await fetch(`${getApiUrl()}/stream-keys`, { cache: 'no-store' });
+    const res = await apiFetch(`${getApiUrl()}/stream-keys`, { cache: 'no-store' });
     if (!res.ok) return [];
 
     const data = await res.json();
@@ -71,9 +104,8 @@ export async function getStreamKeys() {
 
 export async function createStreamKey(name: string, active: boolean) {
   try {
-    const res = await fetch(`${getApiUrl()}/stream-keys`, {
+    const res = await apiFetch(`${getApiUrl()}/stream-keys`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         stream_key: {
           name: name,
@@ -95,8 +127,8 @@ export async function createStreamKey(name: string, active: boolean) {
 }
 
 export async function deleteStreamKey(id: string | number) {
-  const res = await fetch(`${getApiUrl()}/stream-keys/${id}`, {
-    method: 'DELETE',
+  const res = await apiFetch(`${getApiUrl()}/stream-keys/${id}`, {
+    method: 'DELETE'
   });
   if (!res.ok && res.status !== 204) {
     throw new Error("Failed to delete stream key");
@@ -105,12 +137,8 @@ export async function deleteStreamKey(id: string | number) {
 }
 
 export async function regenerateStreamKey(id: string | number) {
-  // Generate a new key string by deleting and recreating
-  // Since the backend doesn't have a dedicated regenerate endpoint,
-  // we'll call a PATCH/PUT if available, or just return the new key
-  const res = await fetch(`${getApiUrl()}/stream-keys/${id}/regenerate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await apiFetch(`${getApiUrl()}/stream-keys/${id}/regenerate`, {
+    method: 'POST'
   });
   if (!res.ok) {
     throw new Error("Failed to regenerate stream key");
@@ -118,11 +146,27 @@ export async function regenerateStreamKey(id: string | number) {
   return await res.json();
 }
 
+export async function getUsers() {
+  try {
+    const res = await apiFetch(`${getApiUrl()}/users`, { cache: 'no-store' });
+    if (!res.ok) return [];
+
+    const data = await res.json();
+    return data.data.map((item: any) => ({
+      id: item.id.toString(),
+      username: item.username,
+      createdAt: item.inserted_at || "Just now",
+    }));
+  } catch (err) {
+    console.error("Failed to fetch users:", err);
+    return [];
+  }
+}
+
 export async function createUser(username: string, passwordString: string) {
   try {
-    const res = await fetch(`${getApiUrl()}/users`, {
+    const res = await apiFetch(`${getApiUrl()}/users`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         user: {
           username: username,
@@ -144,8 +188,8 @@ export async function createUser(username: string, passwordString: string) {
 }
 
 export async function deleteUser(id: string | number) {
-  const res = await fetch(`${getApiUrl()}/users/${id}`, {
-    method: 'DELETE',
+  const res = await apiFetch(`${getApiUrl()}/users/${id}`, {
+    method: 'DELETE'
   });
   if (!res.ok && res.status !== 204) {
     throw new Error("Failed to delete user");
@@ -154,8 +198,8 @@ export async function deleteUser(id: string | number) {
 }
 
 export async function deleteDestination(id: string | number) {
-  const res = await fetch(`${getApiUrl()}/destinations/${id}`, {
-    method: 'DELETE',
+  const res = await apiFetch(`${getApiUrl()}/destinations/${id}`, {
+    method: 'DELETE'
   });
   if (!res.ok && res.status !== 204) {
     throw new Error("Failed to delete destination");
@@ -164,9 +208,8 @@ export async function deleteDestination(id: string | number) {
 }
 
 export async function createDestination(name: string, platform: string, url: string, streamKeyId: string | number) {
-  const res = await fetch(`${getApiUrl()}/destinations`, {
+  const res = await apiFetch(`${getApiUrl()}/destinations`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       name: name,
       platform: platform,
@@ -182,10 +225,26 @@ export async function createDestination(name: string, platform: string, url: str
   return await res.json();
 }
 
+export async function updateDestination(id: string | number, name: string, platform: string, url: string, streamKeyId: string | number) {
+  const res = await apiFetch(`${getApiUrl()}/destinations/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      name: name,
+      platform: platform,
+      target_rtmp_url: url,
+      stream_key_id: typeof streamKeyId === 'string' ? parseInt(streamKeyId, 10) : streamKeyId
+    })
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to update destination");
+  }
+  return await res.json();
+}
+
 export async function startDestination(id: string | number) {
-  const res = await fetch(`${getApiUrl()}/destinations/${id}/start`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
+  const res = await apiFetch(`${getApiUrl()}/destinations/${id}/start`, {
+    method: 'POST'
   });
   if (!res.ok) {
     throw new Error("Failed to start destination");
@@ -194,9 +253,8 @@ export async function startDestination(id: string | number) {
 }
 
 export async function stopDestination(id: string | number) {
-  const res = await fetch(`${getApiUrl()}/destinations/${id}/stop`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
+  const res = await apiFetch(`${getApiUrl()}/destinations/${id}/stop`, {
+    method: 'POST'
   });
   if (!res.ok) {
     throw new Error("Failed to stop destination");
@@ -206,7 +264,7 @@ export async function stopDestination(id: string | number) {
 
 export async function getDestinations() {
   try {
-    const res = await fetch(`${getApiUrl()}/destinations`, { cache: 'no-store' });
+    const res = await apiFetch(`${getApiUrl()}/destinations`, { cache: 'no-store' });
     if (!res.ok) return [];
 
     const data = await res.json();
@@ -222,7 +280,7 @@ export async function getDestinations() {
 
 export async function getServerStats() {
   try {
-    const res = await fetch(`${getApiUrl()}/server-stats`, { cache: 'no-store' });
+    const res = await apiFetch(`${getApiUrl()}/server-stats`, { cache: 'no-store' });
     if (!res.ok) throw new Error("Failed");
     return await res.json();
   } catch (err) {
@@ -232,7 +290,7 @@ export async function getServerStats() {
 
 export async function getDatabaseStats() {
   try {
-    const res = await fetch(`${getApiUrl()}/database-stats`, { cache: 'no-store' });
+    const res = await apiFetch(`${getApiUrl()}/database-stats`, { cache: 'no-store' });
     if (!res.ok) throw new Error("Failed");
     return await res.json();
   } catch (err) {

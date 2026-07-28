@@ -9,17 +9,13 @@ interface DashboardLayoutProps {
   description?: string
 }
 
-export function DashboardLayout({
-  children,
-  title,
-  description,
-}: DashboardLayoutProps) {
+export function DashboardLayout({ children, title, description }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-crt-bg">
       <Sidebar />
-      <div className="lg:pl-64">
+      <div className="lg:pl-14">
         <Header title={title} description={description} />
-        <main className="p-4 lg:p-6">{children}</main>
+        <main className="p-2">{children}</main>
       </div>
     </div>
   )
