@@ -140,11 +140,14 @@ defmodule Backend.StreamingTest do
     end
 
     test "create_destination/1 with valid data creates a destination" do
+      sk = stream_key_fixture()
+
       valid_attrs = %{
         name: "some name",
         status: "some status",
         platform: "some platform",
-        target_rtmp_url: "some target_rtmp_url"
+        target_rtmp_url: "some target_rtmp_url",
+        stream_key_id: sk.id
       }
 
       assert {:ok, %Destination{} = destination} = Streaming.create_destination(valid_attrs)
@@ -152,6 +155,7 @@ defmodule Backend.StreamingTest do
       assert destination.status == "some status"
       assert destination.platform == "some platform"
       assert destination.target_rtmp_url == "some target_rtmp_url"
+      assert destination.stream_key_id == sk.id
     end
 
     test "create_destination/1 with invalid data returns error changeset" do

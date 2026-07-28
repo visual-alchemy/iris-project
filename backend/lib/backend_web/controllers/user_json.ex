@@ -19,7 +19,7 @@ defmodule BackendWeb.UserJSON do
     %{
       id: user.id,
       username: user.username,
-      password_hash: user.password_hash
+      inserted_at: user.inserted_at
     }
   end
 end

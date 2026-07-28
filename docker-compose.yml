@@ -12,6 +12,11 @@ services:
       - "5433:5432"
     volumes:
       - iris_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   mediamtx:
@@ -36,13 +41,14 @@ services:
     container_name: iris_api
     environment:
       - DATABASE_URL=ecto://postgres:postgres@postgres:5432/iris_engine_dev
-      - SECRET_KEY_BASE=YOUR_SECRET_KEY_BASE_HERE
+      - SECRET_KEY_BASE=e0448fff16491bbbaf338a6c07ad7f896afe35771e5afa94e1decb0c456081ce
       - PHX_SERVER=true
       - PHX_HOST=localhost
     ports:
       - "4000:4000"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:

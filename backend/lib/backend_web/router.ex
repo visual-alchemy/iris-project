@@ -5,11 +5,21 @@ defmodule BackendWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :authenticated do
+    plug BackendWeb.AuthPlug
+  end
+
+  # Public routes — no auth required
   scope "/api", BackendWeb do
     pipe_through :api
 
     post "/login", AuthController, :login
     post "/auth/mediamtx", WebhookController, :handle_event
+  end
+
+  # Protected routes — require valid token
+  scope "/api", BackendWeb do
+    pipe_through [:api, :authenticated]
 
     get "/streams", StreamController, :index
     get "/server-stats", StreamController, :server_stats
@@ -17,7 +27,7 @@ defmodule BackendWeb.Router do
 
     resources "/stream-keys", StreamKeyController, except: [:new, :edit, :show, :update]
     post "/stream-keys/:id/regenerate", StreamKeyController, :regenerate
-    resources "/destinations", DestinationController, except: [:new, :edit, :show, :update]
+    resources "/destinations", DestinationController, except: [:new, :edit, :show]
     post "/destinations/:id/start", DestinationController, :start
     post "/destinations/:id/stop", DestinationController, :stop
     resources "/users", UserController, except: [:new, :edit]

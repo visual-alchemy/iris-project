@@ -38,13 +38,24 @@ defmodule Backend.StreamingFixtures do
   Generate a destination.
   """
   def destination_fixture(attrs \\ %{}) do
+    stream_key_id =
+      case Map.get(attrs, :stream_key_id) || Map.get(attrs, "stream_key_id") do
+        nil ->
+          sk = stream_key_fixture()
+          sk.id
+
+        id ->
+          id
+      end
+
     {:ok, destination} =
       attrs
       |> Enum.into(%{
         name: "some name",
         platform: "some platform",
         status: "some status",
-        target_rtmp_url: "some target_rtmp_url"
+        target_rtmp_url: "some target_rtmp_url",
+        stream_key_id: stream_key_id
       })
       |> Backend.Streaming.create_destination()
 

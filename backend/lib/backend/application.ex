@@ -23,7 +23,27 @@ defmodule Backend.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: Backend.Supervisor]
-    Supervisor.start_link(children, opts)
+    result = Supervisor.start_link(children, opts)
+
+    # Reset any stale "streaming" statuses from a previous crash/restart
+    reset_stale_pipeline_statuses()
+
+    result
+  end
+
+  defp reset_stale_pipeline_statuses do
+    import Ecto.Query
+
+    {count, _} =
+      Backend.Repo.update_all(
+        from(d in Backend.Streaming.Destination, where: d.status == "streaming"),
+        set: [status: "stopped"]
+      )
+
+    if count > 0 do
+      require Logger
+      Logger.info("Reset #{count} stale 'streaming' destination(s) to 'stopped' on boot.")
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration

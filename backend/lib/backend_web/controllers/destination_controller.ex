@@ -163,4 +163,36 @@ defmodule BackendWeb.DestinationController do
       conn |> put_status(:not_found) |> json(%{error: "Not found"})
     end
   end
+
+  def update(conn, %{"id" => id} = params) do
+    dest = Backend.Repo.get(Destination, id)
+
+    if dest do
+      dest_params = Map.drop(params, ["id"])
+
+      dest
+      |> Destination.changeset(dest_params)
+      |> Backend.Repo.update()
+      |> case do
+        {:ok, d} ->
+          conn
+          |> json(%{
+            id: d.id,
+            name: d.name,
+            platform: d.platform,
+            status: d.status || "stopped",
+            url: d.target_rtmp_url,
+            stream_key_id: d.stream_key_id,
+            enabled: true
+          })
+
+        {:error, changeset} ->
+          conn
+          |> put_status(:unprocessable_entity)
+          |> json(%{error: "Failed to update", details: inspect(changeset.errors)})
+      end
+    else
+      conn |> put_status(:not_found) |> json(%{error: "Not found"})
+    end
+  end
 end

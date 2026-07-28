@@ -6,7 +6,8 @@ alias Backend.Streaming.StreamKey
 admin =
   case Repo.get_by(User, username: "admin") do
     nil ->
-      {:ok, user} = %User{username: "admin", password_hash: "password"} |> Repo.insert()
+      hashed = :crypto.hash(:sha256, "password") |> Base.encode16() |> String.downcase()
+      {:ok, user} = %User{username: "admin", password_hash: hashed} |> Repo.insert()
       user
 
     user ->
