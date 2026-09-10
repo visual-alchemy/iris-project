@@ -10,16 +10,27 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Plus, MoreVertical, Play, Square, Trash2, Edit, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getDestinations, getStreamKeys, createDestination, startDestination, stopDestination } from "@/lib/api"
+import { getDestinations, getStreamKeys, createDestination, startDestination, stopDestination, type StreamKey } from "@/lib/api"
+import { toast } from "sonner"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 
 const PLATFORM_CFG: Record<string, string> = { YouTube: "YT", Twitch: "TW", Facebook: "FB", "Twitter/X": "X", "Custom RTMP": "RT", "Custom SRT": "SRT" }
 const getPlatformDisplayName = (p: string) => { const l = p?.toLowerCase()||''; if(l==='youtube') return 'YouTube'; if(l==='twitch') return 'Twitch'; if(l==='facebook') return 'Facebook'; if(l==='twitter') return 'Twitter/X'; if(l==='srt') return 'Custom SRT'; return 'Custom RTMP' }
 const getPlatformFormValue = (n: string) => { const l = n?.toLowerCase()||''; if(l.includes('youtube')) return 'youtube'; if(l.includes('twitch')) return 'twitch'; if(l.includes('facebook')) return 'facebook'; if(l.includes('twitter')||l.includes('x')) return 'twitter'; if(l.includes('srt')) return 'srt'; return 'custom' }
 
+interface DestinationRow {
+  id: string
+  name: string
+  platform: string
+  rtmpUrl: string
+  streamKeyRef: string
+  status: string
+  streamKeyId: string
+}
+
 export default function DestinationsPage() {
-  const [destinations, setDestinations] = useState<any[]>([])
-  const [streamKeys, setStreamKeys] = useState<any[]>([])
+  const [destinations, setDestinations] = useState<DestinationRow[]>([])
+  const [streamKeys, setStreamKeys] = useState<StreamKey[]>([])
   const [search, setSearch] = useState("")
   const [createOpen, setCreateOpen] = useState(false)
   const [filterStatus, setFilterStatus] = useState("all")
@@ -30,17 +41,42 @@ export default function DestinationsPage() {
   const fetchData = async () => {
     const [d, k] = await Promise.all([getDestinations(), getStreamKeys()])
     setStreamKeys(k)
-    setDestinations(d.map((x: any) => { const mk = k.find((kk: any) => String(kk.id) === String(x.stream_key_id)); return { id: String(x.id), name: x.name, platform: getPlatformDisplayName(x.platform), rtmpUrl: x.url, streamKeyRef: mk ? mk.name : `KEY#${x.stream_key_id}`, status: x.status, streamKeyId: String(x.stream_key_id || "") } }))
+    setDestinations(d.map((x) => {
+      const mk = k.find((kk) => String(kk.id) === String(x.stream_key_id))
+      return { id: String(x.id), name: x.name, platform: getPlatformDisplayName(x.platform), rtmpUrl: x.url, streamKeyRef: mk ? mk.name : `KEY#${x.stream_key_id}`, status: x.status, streamKeyId: String(x.stream_key_id || "") }
+    }))
   }
 
   useEffect(() => { fetchData() }, [])
 
-  const del = async (id: string) => { if(!confirm("Delete?")) return; try { const { deleteDestination } = await import("@/lib/api"); await deleteDestination(id); setDestinations(prev => prev.filter(d => d.id !== id)) } catch(e) { alert("Failed"); console.error(e) } }
-  const create = async (e: React.FormEvent) => { e.preventDefault(); if(!fName.trim()||!fUrl.trim()||!fKeyId) { alert("Fill all fields"); return }; setSubmitting(true); try { await createDestination(fName, fPlatform, fUrl, fKeyId); setCreateOpen(false); setFName(""); setFPlatform("youtube"); setFUrl(""); setFKeyId(""); await fetchData() } catch(e) { alert("Failed"); console.error(e) } finally { setSubmitting(false) } }
-  const edit = async (ev: React.FormEvent) => { ev.preventDefault(); if(!eName.trim()||!eUrl.trim()||!eKeyId) { alert("Fill all fields"); return }; setSubmitting(true); try { const { updateDestination } = await import("@/lib/api"); await updateDestination(eId, eName, ePlatform, eUrl, eKeyId); setEditOpen(false); await fetchData() } catch(e) { alert("Failed"); console.error(e) } finally { setSubmitting(false) } }
-  const openEdit = (d: any) => { setEId(d.id); setEName(d.name); setEPlatform(getPlatformFormValue(d.platform)); setEUrl(d.rtmpUrl); setEKeyId(d.streamKeyId); setEditOpen(true) }
-  const start = async (id: string) => { try { await startDestination(id); await fetchData() } catch(e) { alert("Failed"); console.error(e) } }
-  const stop = async (id: string) => { try { await stopDestination(id); await fetchData() } catch(e) { alert("Failed"); console.error(e) } }
+  const del = async (id: string) => {
+    toast.error("Delete this destination?", {
+      action: {
+        label: "DELETE",
+        onClick: async () => {
+          try { const { deleteDestination } = await import("@/lib/api"); await deleteDestination(id); setDestinations(prev => prev.filter(d => d.id !== id)); toast.success("Destination deleted") }
+          catch(e) { console.error(e); toast.error("Failed to delete destination") }
+        },
+      },
+    })
+  }
+  const create = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!fName.trim() || !fUrl.trim() || !fKeyId) { toast.error("Fill all fields"); return }
+    setSubmitting(true)
+    try { await createDestination(fName, fPlatform, fUrl, fKeyId); setCreateOpen(false); setFName(""); setFPlatform("youtube"); setFUrl(""); setFKeyId(""); await fetchData() }
+    catch(e) { console.error(e); toast.error("Failed to create destination") } finally { setSubmitting(false) }
+  }
+  const edit = async (ev: React.FormEvent) => {
+    ev.preventDefault()
+    if (!eName.trim() || !eUrl.trim() || !eKeyId) { toast.error("Fill all fields"); return }
+    setSubmitting(true)
+    try { const { updateDestination } = await import("@/lib/api"); await updateDestination(eId, eName, ePlatform, eUrl, eKeyId); setEditOpen(false); await fetchData() }
+    catch(e) { console.error(e); toast.error("Failed to update destination") } finally { setSubmitting(false) }
+  }
+  const openEdit = (d: DestinationRow) => { setEId(d.id); setEName(d.name); setEPlatform(getPlatformFormValue(d.platform)); setEUrl(d.rtmpUrl); setEKeyId(d.streamKeyId); setEditOpen(true) }
+  const start = async (id: string) => { try { await startDestination(id); await fetchData() } catch(e) { console.error(e); toast.error("Failed to start destination") } }
+  const stop = async (id: string) => { try { await stopDestination(id); await fetchData() } catch(e) { console.error(e); toast.error("Failed to stop destination") } }
 
   const filtered = destinations.filter(d => { const ms = d.name.toLowerCase().includes(search.toLowerCase())||d.platform.toLowerCase().includes(search.toLowerCase()); const mf = filterStatus==="all"||d.status===filterStatus; return ms&&mf })
   const streaming = destinations.filter(d => d.status==="streaming").length

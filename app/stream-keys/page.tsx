@@ -12,10 +12,20 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Plus, MoreVertical, Copy, Check, Trash2, RefreshCw, Key } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getStreamKeys, createStreamKey, deleteStreamKey, regenerateStreamKey } from "@/lib/api"
+import { toast } from "sonner"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 
+interface StreamKeyRow {
+  id: string
+  name: string
+  keyString: string
+  status: string
+  lastUsed: string
+  currentStream: boolean
+}
+
 export default function StreamKeysPage() {
-  const [keys, setKeys] = useState<any[]>([])
+  const [keys, setKeys] = useState<StreamKeyRow[]>([])
   const [search, setSearch] = useState("")
   const [copied, setCopied] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -27,8 +37,8 @@ export default function StreamKeysPage() {
   useEffect(() => { setHost(window.location.hostname) }, [])
   useEffect(() => {
     getStreamKeys().then(data => {
-      setKeys(data.map((k: any) => ({
-        id: k.id, name: k.name, keyString: k.key, status: k.status,
+      setKeys(data.map((k) => ({
+        id: k.id, name: k.name, keyString: k.keyString, status: k.status,
         lastUsed: k.lastUsed, currentStream: k.status === "active"
       })))
     })
@@ -46,23 +56,36 @@ export default function StreamKeysPage() {
     setSubmitting(true)
     try {
       const r = await createStreamKey(newName, newActive)
-      setKeys(prev => [{ id: r.id, name: r.name, keyString: r.key, status: r.status, lastUsed: "Never", currentStream: false }, ...prev])
+      setKeys(prev => [{ id: String(r.id), name: r.name, keyString: r.key, status: r.status, lastUsed: "Never", currentStream: false }, ...prev])
       setDialogOpen(false); setNewName(""); setNewActive(true)
     } catch(e) { console.error(e) } finally { setSubmitting(false) }
   }
 
   const del = async (id: string) => {
-    if (!confirm("Delete this stream key?")) return
-    try { await deleteStreamKey(id); setKeys(prev => prev.filter(k => String(k.id) !== String(id))) }
-    catch(e) { alert("Failed"); console.error(e) }
+    toast.error("Delete this stream key?", {
+      action: {
+        label: "DELETE",
+        onClick: async () => {
+          try { await deleteStreamKey(id); setKeys(prev => prev.filter(k => String(k.id) !== String(id))); toast.success("Stream key deleted") }
+          catch(e) { console.error(e); toast.error("Failed to delete stream key") }
+        },
+      },
+    })
   }
 
   const regen = async (id: string, name: string) => {
-    if (!confirm(`Regenerate key for "${name}"? Old key stops working.`)) return
-    try {
-      const nk = await regenerateStreamKey(id)
-      setKeys(prev => prev.map(k => String(k.id) === String(id) ? {...k, keyString: nk.key, status: nk.status, lastUsed: "Never", currentStream: false} : k))
-    } catch(e) { alert("Failed"); console.error(e) }
+    toast.error(`Regenerate key for "${name}"? Old key stops working.`, {
+      action: {
+        label: "REGENERATE",
+        onClick: async () => {
+          try {
+            const nk = await regenerateStreamKey(id)
+            setKeys(prev => prev.map(k => String(k.id) === String(id) ? {...k, keyString: nk.key, status: nk.status, lastUsed: "Never", currentStream: false} : k))
+            toast.success("Key regenerated")
+          } catch(e) { console.error(e); toast.error("Failed to regenerate stream key") }
+        },
+      },
+    })
   }
 
   return (

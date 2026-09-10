@@ -4,7 +4,6 @@ defmodule BackendWeb.AuthPlug do
   Blocks unauthenticated requests with 401.
   """
   import Plug.Conn
-  require Logger
 
   def init(opts), do: opts
 

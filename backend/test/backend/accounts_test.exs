@@ -21,11 +21,11 @@ defmodule Backend.AccountsTest do
     end
 
     test "create_user/1 with valid data creates a user" do
-      valid_attrs = %{username: "some username", password_hash: "some password_hash"}
+      valid_attrs = %{username: "some username", password: "some password"}
 
       assert {:ok, %User{} = user} = Accounts.create_user(valid_attrs)
       assert user.username == "some username"
-      assert user.password_hash == "some password_hash"
+      assert Bcrypt.verify_pass("some password", user.password_hash)
     end
 
     test "create_user/1 with invalid data returns error changeset" do
@@ -37,12 +37,12 @@ defmodule Backend.AccountsTest do
 
       update_attrs = %{
         username: "some updated username",
-        password_hash: "some updated password_hash"
+        password: "some updated password"
       }
 
       assert {:ok, %User{} = user} = Accounts.update_user(user, update_attrs)
       assert user.username == "some updated username"
-      assert user.password_hash == "some updated password_hash"
+      assert Bcrypt.verify_pass("some updated password", user.password_hash)
     end
 
     test "update_user/2 with invalid data returns error changeset" do

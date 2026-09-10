@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Copy, Check, RefreshCw } from "lucide-react"
+import { toast } from "sonner"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 import { getServerStats, getDatabaseStats } from "@/lib/api"
 
@@ -77,7 +78,7 @@ export default function SettingsPage() {
               <div className="text-xs font-data tracking-[0.1em] text-phos-dim mb-3">[ API KEYS ]</div>
               <div className="space-y-2">
                 {[{l:"PUBLIC KEY",k:"pk_live_abc123def456ghi789jkl012",ck:"pub"},{l:"SECRET KEY",k:"sk_live_••••••••••••••••••••••••",ck:"sec"}].map(item => (
-                  <div key={item.ck} className="flex items-center justify-between border border-grid-line px-2 py-2"><div className="min-w-0 flex-1"><Label className="text-xs">{item.l}</Label><div className="mt-1 flex items-center gap-1"><code className="text-xs font-data text-phos-white/70 truncate">{item.k}</code><Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copier(item.k, item.ck)}>{copied===item.ck?<Check className="h-3 w-3 text-sig-green" />:<Copy className="h-3 w-3" />}</Button></div></div><Button variant="outline" size="sm" onClick={() => alert("Regenerated!")} className="shrink-0 ml-2"><RefreshCw className="h-3 w-3" />REGEN</Button></div>
+                  <div key={item.ck} className="flex items-center justify-between border border-grid-line px-2 py-2"><div className="min-w-0 flex-1"><Label className="text-xs">{item.l}</Label><div className="mt-1 flex items-center gap-1"><code className="text-xs font-data text-phos-white/70 truncate">{item.k}</code><Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => copier(item.k, item.ck)}>{copied===item.ck?<Check className="h-3 w-3 text-sig-green" />:<Copy className="h-3 w-3" />}</Button></div></div><Button variant="outline" size="sm" onClick={() => toast.success("Regenerated!")} className="shrink-0 ml-2"><RefreshCw className="h-3 w-3" />REGEN</Button></div>
                 ))}
               </div>
             </div>

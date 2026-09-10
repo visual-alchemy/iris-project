@@ -96,7 +96,7 @@ defmodule BackendWeb.UserControllerTest do
 
   defp create_user_and_auth(%{conn: conn}) do
     admin = user_fixture()
-    user = user_fixture(%{username: "target_user", password_hash: "target_password_hash"})
+    user = user_fixture(%{username: "target_user", password: "target_password"})
     conn = authenticate(conn, admin)
     %{conn: conn, user: user, admin: admin}
   end

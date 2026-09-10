@@ -11,11 +11,11 @@ defmodule Backend.AccountsFixtures do
     {:ok, user} =
       attrs
       |> Enum.into(%{
-        password_hash: "some password_hash",
-        username: "some username"
+        username: "some username",
+        password: "some password"
       })
       |> Backend.Accounts.create_user()
 
-    user
+    %{user | password: nil}
   end
 end

@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
 
   mediamtx:
-    image: bluenviron/mediamtx:latest
+    image: bluenviron/mediamtx:1.15.2
     container_name: iris_mediamtx
     ports:
       - "8554:8554" # RTSP
@@ -41,11 +41,17 @@ services:
     container_name: iris_api
     environment:
       - DATABASE_URL=ecto://postgres:postgres@postgres:5432/iris_engine_dev
-      - SECRET_KEY_BASE=e0448fff16491bbbaf338a6c07ad7f896afe35771e5afa94e1decb0c456081ce
+      - SECRET_KEY_BASE=${SECRET_KEY_BASE}
       - PHX_SERVER=true
       - PHX_HOST=localhost
     ports:
       - "4000:4000"
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/4000 && printf 'GET / HTTP/1.0\r\nHost: localhost\r\n\r\n' >&3 && grep -q 'HTTP/1.' <&3"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     depends_on:
       postgres:
         condition: service_healthy
@@ -61,6 +67,12 @@ services:
       - BACKEND_API_URL=http://iris_api:4000
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 > /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     depends_on:
       - iris_api
     restart: unless-stopped

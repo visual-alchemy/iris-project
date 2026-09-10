@@ -5,13 +5,13 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { StreamPreview, type Stream } from "@/components/dashboard/stream-preview"
 import { ActiveStreams } from "@/components/dashboard/active-streams"
 import { DestinationsStatus } from "@/components/dashboard/destinations-status"
-import { getStreams, getDashboardStats } from "@/lib/api"
+import { getStreams, getDashboardStats, type DashboardStats } from "@/lib/api"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 
 export default function DashboardPage() {
   const [streams, setStreams] = useState<Stream[]>([])
   const [selectedStream, setSelectedStream] = useState<Stream | null>(null)
-  const [stats, setStats] = useState<any>(null)
+  const [stats, setStats] = useState<DashboardStats | null>(null)
 
   useEffect(() => {
     let mounted = true

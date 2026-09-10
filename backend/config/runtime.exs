@@ -23,6 +23,14 @@ end
 config :backend, BackendWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+# CORS allowlist (comma-separated origins), e.g.
+# CORS_ORIGINS="https://iris.example.com,http://localhost:3000"
+config :backend,
+       :cors_origins,
+       System.get_env("CORS_ORIGINS", "http://localhost:3000")
+       |> String.split(",", trim: true)
+       |> Enum.map(&String.trim/1)
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

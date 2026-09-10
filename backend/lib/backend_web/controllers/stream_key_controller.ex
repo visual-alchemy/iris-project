@@ -108,28 +108,17 @@ defmodule BackendWeb.StreamKeyController do
 
   # Check MediaMTX for which stream keys actually have an active RTMP connection
   defp fetch_live_key_strings do
-    case :httpc.request(
-           :get,
-           {~c"http://iris_mediamtx:9997/v3/paths/list", []},
-           [timeout: 3000],
-           []
-         ) do
-      {:ok, {{_, 200, _}, _, body}} ->
-        case Jason.decode(to_string(body)) do
-          {:ok, %{"items" => items}} when is_list(items) ->
-            items
-            |> Enum.filter(fn path -> Map.get(path, "ready", false) == true end)
-            |> Enum.map(fn path ->
-              # Path name format: "live/keyname"
-              Map.get(path, "name", "")
-              |> String.split("/")
-              |> List.last()
-            end)
-            |> Enum.reject(&(&1 == ""))
-
-          _ ->
-            []
-        end
+    case Req.get("http://iris_mediamtx:9997/v3/paths/list", retry: false, receive_timeout: 3000) do
+      {:ok, %Req.Response{status: 200, body: %{"items" => items}}} when is_list(items) ->
+        items
+        |> Enum.filter(fn path -> Map.get(path, "ready", false) == true end)
+        |> Enum.map(fn path ->
+          # Path name format: "live/keyname"
+          Map.get(path, "name", "")
+          |> String.split("/")
+          |> List.last()
+        end)
+        |> Enum.reject(&(&1 == ""))
 
       _ ->
         []

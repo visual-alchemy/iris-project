@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import Hls from "hls.js"
+import type Hls from "hls.js"
 
 interface HlsPlayerProps {
     url: string
@@ -17,28 +17,38 @@ export function HlsPlayer({ url, isPlaying, isMuted, className }: HlsPlayerProps
         const video = videoRef.current
         if (!video) return
 
-        let hls: Hls
+        let hls: Hls | null = null
+        let cancelled = false
 
-        if (Hls.isSupported()) {
-            hls = new Hls()
-            hls.loadSource(url)
-            hls.attachMedia(video)
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                if (isPlaying) {
-                    video.play().catch(console.error)
-                }
-            })
-        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-            // Native HLS support (Safari)
-            video.src = url
-            video.addEventListener("loadedmetadata", () => {
-                if (isPlaying) {
-                    video.play().catch(console.error)
-                }
-            })
+        const load = async () => {
+            // Dynamically import hls.js so it is not in the initial bundle
+            const { default: HlsModule } = await import("hls.js")
+            if (cancelled) return
+
+            if (HlsModule.isSupported()) {
+                hls = new HlsModule()
+                hls.loadSource(url)
+                hls.attachMedia(video)
+                hls.on(HlsModule.Events.MANIFEST_PARSED, () => {
+                    if (isPlaying) {
+                        video.play().catch(console.error)
+                    }
+                })
+            } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+                // Native HLS support (Safari)
+                video.src = url
+                video.addEventListener("loadedmetadata", () => {
+                    if (isPlaying) {
+                        video.play().catch(console.error)
+                    }
+                })
+            }
         }
 
+        load()
+
         return () => {
+            cancelled = true
             if (hls) {
                 hls.destroy()
             }

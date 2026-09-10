@@ -39,9 +39,24 @@ defmodule BackendWeb.Endpoint do
     cookie_key: "request_logger"
 
   plug Corsica,
-    origins: "*",
+    origins: &BackendWeb.Endpoint.cors_origin?/1,
     allow_headers: ["accept", "content-type", "authorization"],
     allow_methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+
+  @default_cors_origins ["http://localhost:3000"]
+
+  @doc """
+  Checks the request origin against the allowlist configured under
+  `:backend, :cors_origins` (populated from the `CORS_ORIGINS` env var,
+  a comma-separated list).
+  """
+  def cors_origin?(origin) when is_binary(origin) do
+    origin in cors_origins()
+  end
+
+  defp cors_origins do
+    Application.get_env(:backend, :cors_origins, @default_cors_origins)
+  end
 
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]

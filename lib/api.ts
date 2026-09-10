@@ -1,4 +1,110 @@
 import { Stream } from "@/components/dashboard/stream-preview"
+import { toast } from "sonner"
+
+// ---- Public API response shapes ----
+
+export interface StreamKey {
+  id: string
+  name: string
+  keyString: string
+  key: string
+  status: string
+  ipWhitelist: string[]
+  createdAt: string
+  lastUsed: string
+  currentStream: boolean
+}
+
+export interface User {
+  id: string
+  username: string
+  createdAt: string
+}
+
+export interface Destination {
+  id: string
+  name: string
+  platform: string
+  url: string
+  status: string
+  stream_key_id: number | string | null
+}
+
+export interface DashboardStats {
+  streams: { total: number }
+  keys: { total: number; active: number }
+  destinations: { total: number; streaming: number; idle: number }
+  viewers: { formatted: string }
+  users?: { total: number }
+}
+
+export interface StreamKeyResponse {
+  id: number
+  name: string
+  key: string
+  status: string
+}
+
+export interface RegenerateStreamKeyResponse {
+  key: string
+  status: string
+}
+
+export interface CreateUserResponse {
+  data: {
+    id: number
+    username: string
+    inserted_at: string | null
+  }
+}
+
+export interface LoginResponse {
+  token: string
+  user: { id: string; username: string }
+}
+
+// ---- Raw backend payloads ----
+
+interface RawStream {
+  id: number
+  title?: string
+  streamKey?: string
+  bitrate?: string
+  viewers?: number
+  uptime?: string
+  destinationsCount?: number
+  ready_time?: string | null
+}
+
+interface RawWhitelist {
+  ip_address: string
+}
+
+interface RawStreamKey {
+  id: number
+  name: string
+  key: string
+  status: string
+  whitelists?: RawWhitelist[]
+  inserted_at?: string
+  last_used_at?: string
+  is_live?: boolean
+}
+
+interface RawUser {
+  id: number
+  username: string
+  inserted_at?: string
+}
+
+interface RawDestination {
+  id: number
+  name: string
+  platform: string
+  url: string
+  status: string
+  stream_key_id: number | null
+}
 
 function getApiUrl() {
   const isServer = typeof window === 'undefined';
@@ -42,7 +148,7 @@ async function apiFetch(url: string, options: RequestInit = {}) {
   return res;
 }
 
-export async function login(username: string, password: string) {
+export async function login(username: string, password: string): Promise<LoginResponse> {
   const res = await fetch(`${getApiUrl()}/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -61,11 +167,11 @@ export async function getStreams(): Promise<Stream[]> {
     const res = await apiFetch(`${getApiUrl()}/streams`, { cache: 'no-store' });
     if (!res.ok) return [];
 
-    const data = await res.json();
-    return data.map((item: any) => ({
+    const data: RawStream[] = await res.json();
+    return data.map((item) => ({
       id: item.id.toString(),
       name: item.title || "Live Stream",
-      streamKey: item.streamKey,
+      streamKey: item.streamKey ?? "",
       status: "live",
       bitrate: item.bitrate || "0 kbps",
       viewers: item.viewers || 0,
@@ -79,19 +185,19 @@ export async function getStreams(): Promise<Stream[]> {
   }
 }
 
-export async function getStreamKeys() {
+export async function getStreamKeys(): Promise<StreamKey[]> {
   try {
     const res = await apiFetch(`${getApiUrl()}/stream-keys`, { cache: 'no-store' });
     if (!res.ok) return [];
 
-    const data = await res.json();
-    return data.map((item: any) => ({
+    const data: RawStreamKey[] = await res.json();
+    return data.map((item) => ({
       id: item.id.toString(),
       name: item.name,
       keyString: item.key, // UI expects keyString
       key: item.key,
       status: item.status,
-      ipWhitelist: item.whitelists ? item.whitelists.map((w: any) => w.ip_address) : [],
+      ipWhitelist: item.whitelists ? item.whitelists.map((w) => w.ip_address) : [],
       createdAt: item.inserted_at || "Just now",
       lastUsed: item.last_used_at || "Never",
       currentStream: item.is_live || false
@@ -102,7 +208,7 @@ export async function getStreamKeys() {
   }
 }
 
-export async function createStreamKey(name: string, active: boolean) {
+export async function createStreamKey(name: string, active: boolean): Promise<StreamKeyResponse> {
   try {
     const res = await apiFetch(`${getApiUrl()}/stream-keys`, {
       method: 'POST',
@@ -116,12 +222,12 @@ export async function createStreamKey(name: string, active: boolean) {
 
     if (!res.ok) {
       const errText = await res.text();
-      alert(`Backend Error (${res.status}): ${errText}`);
+      toast.error(`Backend Error (${res.status}): ${errText}`);
       throw new Error("Failed to create stream key");
     }
     return await res.json();
-  } catch (err: any) {
-    alert(`Network Error: ${err.message}`);
+  } catch (err) {
+    toast.error(`Network Error: ${err instanceof Error ? err.message : String(err)}`);
     throw err;
   }
 }
@@ -136,7 +242,7 @@ export async function deleteStreamKey(id: string | number) {
   return true;
 }
 
-export async function regenerateStreamKey(id: string | number) {
+export async function regenerateStreamKey(id: string | number): Promise<RegenerateStreamKeyResponse> {
   const res = await apiFetch(`${getApiUrl()}/stream-keys/${id}/regenerate`, {
     method: 'POST'
   });
@@ -146,13 +252,13 @@ export async function regenerateStreamKey(id: string | number) {
   return await res.json();
 }
 
-export async function getUsers() {
+export async function getUsers(): Promise<User[]> {
   try {
     const res = await apiFetch(`${getApiUrl()}/users`, { cache: 'no-store' });
     if (!res.ok) return [];
 
-    const data = await res.json();
-    return data.data.map((item: any) => ({
+    const data: { data: RawUser[] } = await res.json();
+    return data.data.map((item) => ({
       id: item.id.toString(),
       username: item.username,
       createdAt: item.inserted_at || "Just now",
@@ -163,7 +269,7 @@ export async function getUsers() {
   }
 }
 
-export async function createUser(username: string, passwordString: string) {
+export async function createUser(username: string, passwordString: string): Promise<CreateUserResponse> {
   try {
     const res = await apiFetch(`${getApiUrl()}/users`, {
       method: 'POST',
@@ -177,12 +283,12 @@ export async function createUser(username: string, passwordString: string) {
 
     if (!res.ok) {
       const errText = await res.text();
-      alert(`Backend Error (${res.status}): ${errText}`);
+      toast.error(`Backend Error (${res.status}): ${errText}`);
       throw new Error("Failed to create user");
     }
     return await res.json();
-  } catch (err: any) {
-    alert(`Network Error: ${err.message}`);
+  } catch (err) {
+    toast.error(`Network Error: ${err instanceof Error ? err.message : String(err)}`);
     throw err;
   }
 }
@@ -207,7 +313,7 @@ export async function deleteDestination(id: string | number) {
   return true;
 }
 
-export async function createDestination(name: string, platform: string, url: string, streamKeyId: string | number) {
+export async function createDestination(name: string, platform: string, url: string, streamKeyId: string | number): Promise<unknown> {
   const res = await apiFetch(`${getApiUrl()}/destinations`, {
     method: 'POST',
     body: JSON.stringify({
@@ -225,7 +331,7 @@ export async function createDestination(name: string, platform: string, url: str
   return await res.json();
 }
 
-export async function updateDestination(id: string | number, name: string, platform: string, url: string, streamKeyId: string | number) {
+export async function updateDestination(id: string | number, name: string, platform: string, url: string, streamKeyId: string | number): Promise<unknown> {
   const res = await apiFetch(`${getApiUrl()}/destinations/${id}`, {
     method: 'PUT',
     body: JSON.stringify({
@@ -242,7 +348,7 @@ export async function updateDestination(id: string | number, name: string, platf
   return await res.json();
 }
 
-export async function startDestination(id: string | number) {
+export async function startDestination(id: string | number): Promise<unknown> {
   const res = await apiFetch(`${getApiUrl()}/destinations/${id}/start`, {
     method: 'POST'
   });
@@ -252,7 +358,7 @@ export async function startDestination(id: string | number) {
   return await res.json();
 }
 
-export async function stopDestination(id: string | number) {
+export async function stopDestination(id: string | number): Promise<unknown> {
   const res = await apiFetch(`${getApiUrl()}/destinations/${id}/stop`, {
     method: 'POST'
   });
@@ -262,13 +368,13 @@ export async function stopDestination(id: string | number) {
   return await res.json();
 }
 
-export async function getDestinations() {
+export async function getDestinations(): Promise<Destination[]> {
   try {
     const res = await apiFetch(`${getApiUrl()}/destinations`, { cache: 'no-store' });
     if (!res.ok) return [];
 
-    const data = await res.json();
-    return data.map((item: any) => ({
+    const data: RawDestination[] = await res.json();
+    return data.map((item) => ({
       ...item,
       id: item.id.toString(),
     }));
@@ -283,7 +389,7 @@ export async function getServerStats() {
     const res = await apiFetch(`${getApiUrl()}/server-stats`, { cache: 'no-store' });
     if (!res.ok) throw new Error("Failed");
     return await res.json();
-  } catch (err) {
+  } catch {
     return { version: "Unknown", uptime: "0:00:00", connections: 0 };
   }
 }
@@ -293,12 +399,12 @@ export async function getDatabaseStats() {
     const res = await apiFetch(`${getApiUrl()}/database-stats`, { cache: 'no-store' });
     if (!res.ok) throw new Error("Failed");
     return await res.json();
-  } catch (err) {
+  } catch {
     return { records: 0, size: "Unknown", lastBackup: "Unknown" }
   }
 }
 
-export async function getDashboardStats() {
+export async function getDashboardStats(): Promise<DashboardStats> {
   const [streams, streamKeys, destinations] = await Promise.all([
     getStreams(),
     getStreamKeys(),
@@ -306,10 +412,10 @@ export async function getDashboardStats() {
   ]);
 
   const activeStreams = streams.length;
-  const activeKeys = streamKeys.filter((k: any) => k.status === 'active').length;
+  const activeKeys = streamKeys.filter((k) => k.status === 'active').length;
 
   const totalDestinations = destinations.length;
-  const streamingDestinations = destinations.filter((d: any) => d.status === 'streaming').length;
+  const streamingDestinations = destinations.filter((d) => d.status === 'streaming').length;
 
   const totalViewers = streams.reduce((sum, stream) => sum + (stream.viewers || 0), 0);
 

@@ -40,13 +40,7 @@ defmodule Backend.Accounts.User do
   defp put_password_hash(
          %Ecto.Changeset{valid?: true, changes: %{password: password}} = changeset
        ) do
-    # Ensure you have `:bcrypt_elixir` installed to use this, otherwise fake it or use Argon2
-    # Since we don't have bcrypt configured right now, we will do a simple generic hash 
-    # to unblock the API creation tests and insert valid data
-    # In production, replace this with Bcrypt.hash_pwd_salt(password)
-
-    hash = :crypto.hash(:sha256, password) |> Base.encode16() |> String.downcase()
-    change(changeset, password_hash: hash)
+    change(changeset, password_hash: Bcrypt.hash_pwd_salt(password))
   end
 
   defp put_password_hash(changeset), do: changeset

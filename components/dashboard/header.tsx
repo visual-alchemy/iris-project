@@ -75,7 +75,7 @@ export function Header({ title, description }: HeaderProps) {
           </span>
           {description && (
             <span className="hidden sm:inline text-xs font-data tracking-[0.06em] text-phos-dim">
-              // {description}
+              {"// "}{description}
             </span>
           )}
         </div>

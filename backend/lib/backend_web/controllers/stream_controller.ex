@@ -103,20 +103,9 @@ defmodule BackendWeb.StreamController do
   # --- Private helpers ---
 
   defp fetch_mediamtx_paths do
-    case :httpc.request(
-           :get,
-           {~c"http://iris_mediamtx:9997/v3/paths/list", []},
-           [timeout: 3000],
-           []
-         ) do
-      {:ok, {{_, 200, _}, _, body}} ->
-        case Jason.decode(to_string(body)) do
-          {:ok, %{"items" => items}} when is_list(items) -> items
-          _ -> []
-        end
-
-      _ ->
-        []
+    case Req.get("http://iris_mediamtx:9997/v3/paths/list", retry: false, receive_timeout: 3000) do
+      {:ok, %Req.Response{status: 200, body: %{"items" => items}}} when is_list(items) -> items
+      _ -> []
     end
   end
 
@@ -126,8 +115,6 @@ defmodule BackendWeb.StreamController do
       String.contains?(name, key_string)
     end)
   end
-
-  defp format_bitrate(nil), do: "0 kbps"
 
   defp format_bitrate(mtx_data) do
     bytes = Map.get(mtx_data, "bytesReceived", 0)
@@ -147,8 +134,6 @@ defmodule BackendWeb.StreamController do
     end
   end
 
-  defp format_uptime(nil), do: "00:00:00"
-
   defp format_uptime(mtx_data) do
     ready_time = get_ready_time(mtx_data)
 
@@ -162,8 +147,6 @@ defmodule BackendWeb.StreamController do
       "00:00:00"
     end
   end
-
-  defp get_ready_time(nil), do: nil
 
   defp get_ready_time(mtx_data) do
     case Map.get(mtx_data, "readyTime") do

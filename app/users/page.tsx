@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Plus, MoreVertical, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 
 interface User { id: string; username: string; createdAt: string }
@@ -39,9 +40,15 @@ export default function UsersPage() {
   }
 
   const del = async (id: string) => {
-    if (!confirm("Delete this user?")) return
-    try { const { deleteUser } = await import("@/lib/api"); await deleteUser(id); setUsers(prev => prev.filter(u => u.id !== id)) }
-    catch(e) { alert("Failed"); console.error(e) }
+    toast.error("Delete this user?", {
+      action: {
+        label: "DELETE",
+        onClick: async () => {
+          try { const { deleteUser } = await import("@/lib/api"); await deleteUser(id); setUsers(prev => prev.filter(u => u.id !== id)); toast.success("User deleted") }
+          catch(e) { console.error(e); toast.error("Failed to delete user") }
+        },
+      },
+    })
   }
 
   const filtered = users.filter(u => u.username.toLowerCase().includes(search.toLowerCase()))

@@ -10,7 +10,11 @@ defmodule Backend.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      listeners: [Phoenix.CodeReloader]
+      listeners: [Phoenix.CodeReloader],
+      dialyzer: [
+        # `mix dialyzer` — first run builds the PLT and can take several minutes.
+        plt_add_apps: [:ex_unit]
+      ]
     ]
   end
 
@@ -52,7 +56,10 @@ defmodule Backend.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
-      {:corsica, "~> 2.1"}
+      {:corsica, "~> 2.1"},
+      {:bcrypt_elixir, "~> 3.0"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: false}
     ]
   end
 

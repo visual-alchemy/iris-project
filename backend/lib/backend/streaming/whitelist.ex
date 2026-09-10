@@ -12,7 +12,7 @@ defmodule Backend.Streaming.Whitelist do
   @doc false
   def changeset(whitelist, attrs) do
     whitelist
-    |> cast(attrs, [:ip_address])
+    |> cast(attrs, [:ip_address, :stream_key_id])
     |> validate_required([:ip_address])
   end
 end
